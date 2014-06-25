@@ -5,6 +5,14 @@
 // Advanced settings can be found in Configuration_adv.h
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
+// --------- Commonly altered calibration settings (ab)
+#define MANUAL_Z_HOME_POS 245.7  // roughly 245 for ab build, For delta: Distance between nozzle and print surface after homing.
+
+// Radius from center of bed to ?vert tower?
+// Increasing this number makes Z=const surface more  bowl-shaped (center  lower than edges)
+// Decreasing this number makes Z=const surface more igloo-shaped (center higher than edges)
+#define DELTA_RADIUS 112
+
 //===========================================================================
 //============================= DELTA Printer ===============================
 //===========================================================================
@@ -16,7 +24,7 @@
 // startup. Implementation of an idea by Prof Braino to inform user that any changes made to this
 // build by the user have been successfully uploaded into firmware.
 #define STRING_VERSION_CONFIG_H __DATE__ " " __TIME__ // build date and time
-#define STRING_CONFIG_H_AUTHOR "(jcrocholl, Mini Kossel)" // Who made the changes.
+#define STRING_CONFIG_H_AUTHOR "(jcrocholl,Mr-What, Mini Kossel)" // Who made the changes.
 
 // SERIAL_PORT selects which serial port should be used for communication with the host.
 // This allows the connection of wireless adapters (for instance) to non-default port pins.
@@ -24,8 +32,8 @@
 #define SERIAL_PORT 0
 
 // This determines the communication speed of the printer
-// This determines the communication speed of the printer
-#define BAUDRATE 250000
+//#define BAUDRATE 250000
+#define BAUDRATE 115200
 
 // This enables the serial port associated to the Bluetooth interface
 //#define BTENABLED              // Enable BT interface on AT90USB devices
@@ -106,19 +114,22 @@
 #define DELTA_SEGMENTS_PER_SECOND 160
 
 // Center-to-center distance of the holes in the diagonal push rods.
-#define DELTA_DIAGONAL_ROD 186.0 // mm
+#define DELTA_DIAGONAL_ROD 213.4 // mm
 
 // Horizontal offset from middle of printer to smooth rod center.
-#define DELTA_SMOOTH_ROD_OFFSET 128.0 // mm
+//#define DELTA_SMOOTH_ROD_OFFSET 107 //128.0 // mm
 
 // Horizontal offset of the universal joints on the end effector.
-#define DELTA_EFFECTOR_OFFSET 19.9 // mm
+//#define DELTA_EFFECTOR_OFFSET 47.4 //19.9 // mm
 
 // Horizontal offset of the universal joints on the carriages.
-#define DELTA_CARRIAGE_OFFSET 19.5 // mm
+//#define DELTA_CARRIAGE_OFFSET 47.4 // 19.5 // mm
 
 // Horizontal distance bridged by diagonal push rods when effector is centered.
-#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET)
+// Move this to top since it is a common calibration setting
+// It appears that DELTA_RADIUS is the only number used, so just set it directly,
+// instead of frobbing the 3 ill-defined and hard-to-measure numbers (ab)
+//#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET)
 
 // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
 #define DELTA_PRINTABLE_RADIUS 70.0
@@ -320,7 +331,7 @@
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Y_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
-const bool Z_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
+const bool Z_MIN_ENDSTOP_INVERTING = true; // set to true to invert the logic of the endstop.
 const bool X_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Y_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
@@ -344,9 +355,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define DISABLE_Z false
 #define DISABLE_E false // For all extruders
 
-#define INVERT_X_DIR false    // for Mendel set to false, for Orca set to true
-#define INVERT_Y_DIR false    // for Mendel set to true, for Orca set to false
-#define INVERT_Z_DIR false    // for Mendel set to false, for Orca set to true
+#define INVERT_X_DIR true//false    // for Mendel set to false, for Orca set to true
+#define INVERT_Y_DIR true//false    // for Mendel set to true, for Orca set to false
+#define INVERT_Z_DIR true//false    // for Mendel set to false, for Orca set to true
 #define INVERT_E0_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
 #define INVERT_E1_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
 #define INVERT_E2_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
@@ -385,9 +396,10 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
   #define FRONT_PROBE_BED_POSITION -DELTA_PROBABLE_RADIUS
 
   // these are the offsets to the probe relative to the extruder tip (Hotend - Probe)
-  #define X_PROBE_OFFSET_FROM_EXTRUDER -1.0
-  #define Y_PROBE_OFFSET_FROM_EXTRUDER 21.0
-  #define Z_PROBE_OFFSET_FROM_EXTRUDER -6.7
+  // I'm using probless (pressure sensors on print plate), so I guess 0 is ok (ab)
+  #define X_PROBE_OFFSET_FROM_EXTRUDER 0//-1.0
+  #define Y_PROBE_OFFSET_FROM_EXTRUDER 0//21.0
+  #define Z_PROBE_OFFSET_FROM_EXTRUDER 0//-6.7
 
   #define Z_RAISE_BEFORE_HOMING 4       // (in mm) Raise Z before homing (G28) for Probe Clearance.
                                         // Be sure you have this distance over your Z_MAX_POS in case
@@ -449,7 +461,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 // For deltabots this means top and center of the Cartesian print volume.
 #define MANUAL_X_HOME_POS 0
 #define MANUAL_Y_HOME_POS 0
-#define MANUAL_Z_HOME_POS 214  // For delta: Distance between nozzle and print surface after homing.
+// moved to top of file : #define MANUAL_Z_HOME_POS 245.7  // roughly 245 for ab build, For delta: Distance between nozzle and print surface after homing.
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
@@ -460,7 +472,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define XYZ_FULL_STEPS_PER_ROTATION 200
 #define XYZ_MICROSTEPS 16
 #define XYZ_BELT_PITCH 2
-#define XYZ_PULLEY_TEETH 17
+#define XYZ_PULLEY_TEETH 16//17
 #define XYZ_STEPS (XYZ_FULL_STEPS_PER_ROTATION * XYZ_MICROSTEPS / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
 
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 100}

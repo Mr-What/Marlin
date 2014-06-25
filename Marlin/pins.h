@@ -396,6 +396,7 @@
   #define LARGE_FLASH true
 
   #if MOTHERBOARD == 77
+
     #define X_STEP_PIN         54
     #define X_DIR_PIN          55
     #define X_ENABLE_PIN       38
@@ -438,6 +439,8 @@
 
   #else
 
+/// #error this is aaron's board section
+
     #define X_STEP_PIN         54
     #define X_DIR_PIN          55
     #define X_ENABLE_PIN       38
@@ -448,13 +451,13 @@
     #define Y_DIR_PIN          61
     #define Y_ENABLE_PIN       56
     #define Y_MIN_PIN          -1 // unused for deltabot, was 14
-    #define Y_MAX_PIN          15
+    #define Y_MAX_PIN          19 // swap YZ due to wiring error : 15
 
     #define Z_STEP_PIN         46
     #define Z_DIR_PIN          48
     #define Z_ENABLE_PIN       62
     #define Z_MIN_PIN          18 // autolevel for deltabot
-    #define Z_MAX_PIN          19
+    #define Z_MAX_PIN          15 // swap YZ due to wiring error : 19
 
     #define Y2_STEP_PIN        36
     #define Y2_DIR_PIN         34
@@ -2576,5 +2579,17 @@
                         HEATER_BED_PIN, FAN_PIN,                  \
                         _E0_PINS _E1_PINS _E2_PINS             \
                         analogInputToDigitalPin(TEMP_0_PIN), analogInputToDigitalPin(TEMP_1_PIN), analogInputToDigitalPin(TEMP_2_PIN), analogInputToDigitalPin(TEMP_BED_PIN) }
+
+
+
+//#if(1)
+//   // Aaron screwed up wiring on initial Kossel-Mini build.  Swap YZ endstop pins here for now.
+//   #define YZ_TEMP_MAX_PIN Y_MAX_PIN
+//   #undef  Y_MAX_PIN
+//   #define Y_MAX_PIN Z_MAX_PIN
+//   #undef  Z_MAX_PIN
+//   #define Z_MAX_PIN YZ_TEMP_MAX_PIN
+//#endif
+
 #endif
 
