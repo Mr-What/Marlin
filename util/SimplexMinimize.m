@@ -1,5 +1,3 @@
-% $Header: /home/cvs/DETEC/BRDF/MatLab/SimplexMinimize.m,v 1.5 2006/09/27 21:13:37 aaron Exp $
-%
 % Implementation of the Simplex minimization technique.
 % Based off of the code in Numerical Recipes,
 % but generalized
@@ -81,19 +79,3 @@ while(1)
     %nEval % debug output
     %pause;
 end
-
-% $Log: SimplexMinimize.m,v $
-% Revision 1.5  2006/09/27 21:13:37  aaron
-% trying to get rid of ans = output on some runs
-%
-% Revision 1.4  2006/08/18 11:39:41  aaron
-% cleaning up debug for production runs
-%
-% Revision 1.3  2006/06/28 22:36:45  aaron
-% return err too
-%
-% Revision 1.2  2006/06/27 22:14:55  aaron
-% running, but needs speed and robustness help
-%
-% Revision 1.1  2006/05/25 21:57:19  aaron
-% *** empty log message ***

@@ -1,5 +1,3 @@
-% $Header: /home/cvs/DETEC/BRDF/MatLab/SimplexExitCriteriaMet.m,v 1.3 2006/09/27 21:14:12 aaron Exp $
-%
 % Return true if exit criteria met
 
 function a = SimplexExitCriteriaMet(simplex,smallBox,nEvalSinceNewLow)
@@ -45,20 +43,3 @@ end
 box = hi - lo;
 a = (length(find(hi - lo > smallBox)) <=  0);
 %if (a), disp('smallbox'); end
-
-% $Log: SimplexExitCriteriaMet.m,v $
-% Revision 1.3  2006/09/27 21:14:12  aaron
-% easing exit criteria
-%
-% Revision 1.2  2006/09/25 23:31:04  aaron
-% changing to derive AB, C with least-squares
-%
-% Revision 1.1  2006/05/25 21:57:19  aaron
-% *** empty log message ***
-%
-% Revision 1.1  2003/07/21 20:20:06  birenaa
-% moving from RCS to CVS
-%
-% Revision 1.1  2003/07/09 23:30:50  birenaa
-% Initial revision
-%

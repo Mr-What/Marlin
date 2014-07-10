@@ -18,6 +18,13 @@
 %       RodLen   -- length between center of pivots on diagonal rods
 function [deltaErr, towerErr] = guessDeltaErr(DP,meas)
 
+% initial data plot
+figure(2);
+hold off;
+[c,ax,pFit] = plotParabolicFit(meas);
+grid on;hold on;
+plot3(meas(:,1),meas(:,2),meas(:,3),'+');
+
 GuessParams = DP;
 GuessParams.meas = meas;
 GuessParams.verbose = 0;
@@ -26,11 +33,29 @@ GuessParams.verbose = 0;
    	      [0 0 0 0], 0.1+[0 0 0 0], 0.005+[0 0 0 0], 300)
 deltaErr = dErr(1);
 towerErr = dErr(2:4);
+
+% plot delta parameter fit
 errZ = deltaErrZ(dErr,GuessParams);
-hold off;plot3(meas(:,1),meas(:,2),meas(:,3),'+');
-hold on;plot3(meas(:,1),meas(:,2),errZ+meas(:,3),'rx');
-grid on;hold off
+plot3(meas(:,1),meas(:,2),errZ+meas(:,3),'rx');
+legend('Parabolic Fit','Measured','Fit Model');
+hold off
+
+figure(3);
+hold off;
+fm = meas; fm(:,3) = fm(:,3)+errZ;
+c = plotParabolicFit(fm);
+grid on;hold on;
+plot3(fm(:,1),fm(:,2),fm(:,3),'+');
+hold off;
+
+figure(1);
+hold off
+plot3(meas(:,1),meas(:,2),meas(:,3),'+');
+grid on;hold on;
+plot3(meas(:,1),meas(:,2),errZ+meas(:,3),'rx');
 legend('Measured','Fit Model');
+hold off
+
 end
 
 % Error metric for minimization
@@ -56,3 +81,38 @@ for i=1:n
   errZ(i) = dz(3) - GP.meas(i,3);
 end
 end
+
+%%% Parabolic fit code.  Might move this to separate file(s) someday
+function [c,ax,z] = plotParabolicFit(meas)
+c = parabolicFit(meas)
+% distance from origin of all measurements
+r = sqrt(meas(:,1) .* meas(:,1) + meas(:,2) .* meas(:,2));
+r5 = floor(max(r)/5)*5+5;  % r, rounded up to to neareast 5mm
+ax = [-r5:5:r5];
+n = length(ax);
+z = zeros(n);
+for i=1:n
+   x = ax(i);
+   for j=1:n
+      y = ax(j);
+      if (norm([x y]) <= r5)
+         z(j,i) = parabola(c,x,y);
+      end
+   end
+end
+meshc(ax,ax,z);
+end
+
+function c = parabolicFit(meas)
+A = ones(size(meas,1),6);
+A(:,2:3) = meas(:,1:2);
+A(:,4) = meas(:,1) .* meas(:,2);
+A(:,5) = meas(:,1) .* meas(:,1);
+A(:,6) = meas(:,2) .* meas(:,2);
+c = inv(A' * A) * A' * meas(:,3);
+end
+
+function z = parabola(c,x,y)
+z = c(1) + c(2)*x + c(3)*y + c(4)*x*y + c(5)*x*x + c(6)*y*y;
+end
+
