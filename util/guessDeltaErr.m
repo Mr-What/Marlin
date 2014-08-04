@@ -16,6 +16,9 @@
 %                   of tower pivot for diagonal arm, minus effector offset
 %                   (kind of a radius - effector_offset)
 %       RodLen   -- length between center of pivots on diagonal rods
+%
+% RETURN:  values to ADD to DELTA_RADIUS and tower offset(M666 X Y Z)
+%          settings to calibrate print bed
 function [deltaErr, towerErr] = guessDeltaErr(DP,meas)
 
 % initial data plot
@@ -24,6 +27,8 @@ hold off;
 [c,ax,pFit] = plotParabolicFit(meas);
 grid on;hold on;
 plot3(meas(:,1),meas(:,2),meas(:,3),'+');
+title('Parabolic fit to measurements, + is measurements, . are fit points');
+pause(0.1);
 
 GuessParams = DP;
 GuessParams.meas = meas;
@@ -32,12 +37,13 @@ GuessParams.verbose = 0;
               @(p) deltaGuessErr(p,GuessParams),...
    	      [0 0 0 0], 0.1+[0 0 0 0], 0.005+[0 0 0 0], 300)
 deltaErr = dErr(1);
-towerErr = dErr(2:4);
+towerErr =-dErr(2:4);
 
 % plot delta parameter fit
 errZ = deltaErrZ(dErr,GuessParams);
-plot3(meas(:,1),meas(:,2),errZ+meas(:,3),'rx');
-legend('Parabolic Fit','Measured','Fit Model');
+plot3(meas(:,1),meas(:,2),errZ+meas(:,3),'r.');
+#legend('Parabolic Fit to measurements','Measured','Delta Fit Points');
+xlabel('X');ylabel('Y');
 hold off
 
 figure(3);
@@ -47,13 +53,16 @@ c = plotParabolicFit(fm);
 grid on;hold on;
 plot3(fm(:,1),fm(:,2),fm(:,3),'+');
 hold off;
+title('Parabolic Fit to simulated points');
+xlabel('X');ylabel('Y');
 
 figure(1);
 hold off
 plot3(meas(:,1),meas(:,2),meas(:,3),'+');
 grid on;hold on;
 plot3(meas(:,1),meas(:,2),errZ+meas(:,3),'rx');
-legend('Measured','Fit Model');
+legend('Measured','Fitted Points');
+xlabel('X');ylabel('Y');
 hold off
 
 end

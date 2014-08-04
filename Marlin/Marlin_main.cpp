@@ -15,7 +15,7 @@
  GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ along with this program.  If not, see <http://www.gnu.orM503g/licenses/>.
  */
 
 /*
@@ -249,7 +249,8 @@ int EtoPPressure=0;
 float delta[3] = {0.0, 0.0, 0.0};
 #endif
 
-#ifdef NONLINEAR_BED_LEVELING
+//#ifdef NONLINEAR_BED_LEVELING // puked when attempting linear fit (ab)
+#ifdef ACCURATE_BED_LEVELING
 float bed_level[ACCURATE_BED_LEVELING_POINTS][ACCURATE_BED_LEVELING_POINTS];
 #endif
 
@@ -993,6 +994,7 @@ static void engage_z_probe() {
 #endif
     }
     #else // Deploy the Z probe by touching the belt, no servo needed.
+/* this not working (yet) for me (ab)
     feedrate = homing_feedrate[X_AXIS];
     destination[X_AXIS] = 35;
     destination[Y_AXIS] = 72;
@@ -1003,6 +1005,7 @@ static void engage_z_probe() {
     destination[X_AXIS] = 0;
     prepare_move_raw();
     st_synchronize();
+*/
     #endif //SERVO_ENDSTOPS
 }
 
@@ -1024,8 +1027,10 @@ static void retract_z_probe() {
     destination[Z_AXIS] = current_position[Z_AXIS] + 20;
     prepare_move_raw();
 
-    destination[X_AXIS] = -46;
-    destination[Y_AXIS] = 59;
+#define RETRACT_RADIUS 90  // want retraction platform this far from plate center
+#define RETRACT_ANG    (-20*3.1416/180)  // want retraction platform this far from +Y axis
+    destination[X_AXIS] = RETRACT_RADIUS * sin(RETRACT_ANG); //-46;
+    destination[Y_AXIS] = RETRACT_RADIUS * cos(RETRACT_ANG); // 59;
     destination[Z_AXIS] = 28;
     prepare_move_raw();
 
@@ -1190,8 +1195,19 @@ static void homeaxis(int axis) {
     if (endstop_adj[axis] * axis_home_dir < 0) {
       plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
       destination[axis] = endstop_adj[axis];
+MYSERIAL.print("Tower");MYSERIAL.print(axis);MYSERIAL.print("  adjust=");MYSERIAL.println(endstop_adj[axis]);
+MYSERIAL.print(destination[X_AXIS]);MYSERIAL.print(' ');
+MYSERIAL.print(destination[Y_AXIS]);MYSERIAL.print(' ');
+MYSERIAL.println(destination[Z_AXIS]);
       plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
+delay(1);
       st_synchronize();
+delay(1);
+      if (axis==2+7) {// trouble with Z tower not adjusting?!?? stays at endstop(ab)
+        MYSERIAL.println("Double-check Z");
+        plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS]-10, destination[E_AXIS], feedrate/60, active_extruder);
+        st_synchronize();
+      }
     }
 #endif
     axis_is_at_home(axis);
@@ -3256,8 +3272,39 @@ void clamp_to_software_endstops(float target[3])
 }
 
 #ifdef DELTA
+// compute delta axis positions from desired cartesian position
+void calculate_delta(const float x, const float y, const float z)  // might be slightly faster (ab)
+{
+  float dx, dy;
+  dx = DELTA_TOWER1_X - x;
+  dy = DELTA_TOWER1_Y - y;
+  delta[X_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + z;
+  dx = DELTA_TOWER2_X - x;
+  dy = DELTA_TOWER2_Y - y;
+  delta[Y_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + z;
+  dx = DELTA_TOWER3_X - x;
+  dy = DELTA_TOWER3_Y - y;
+  delta[Z_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + z;
+}
+
 void calculate_delta(float cartesian[3])
 {
+#if 0
+  // This code assumes that DELTA_RADIUS was set to the XY projected distance between
+  // diagonal rod ends, when the effector head was placed in the center of the bed.
+  //    DELTA_RADIUS is ised to compute DELTA_TOWER?_X/Y
+  float dx, dy;
+  dx = DELTA_TOWER1_X - EFFECTOR_OFFSET1_X - cartesian[X_AXIS];
+  dy = DELTA_TOWER1_Y - EFFECTOR_OFFSET1_Y - cartesian[Y_AXIS];
+  delta[X_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + cartesian[Z_AXIS];
+  dx = DELTA_TOWER2_X - EFFECTOR_OFFSET2_X - cartesian[X_AXIS];
+  dy = DELTA_TOWER2_Y - EFFECTOR_OFFSET2_Y - cartesian[Y_AXIS];
+  delta[Y_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + cartesian[Z_AXIS];
+  dx = DELTA_TOWER3_X - EFFECTOR_OFFSET3_X - cartesian[X_AXIS];
+  dy = DELTA_TOWER3_Y - EFFECTOR_OFFSET3_Y - cartesian[Y_AXIS];
+  delta[Z_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + cartesian[Z_AXIS];
+#else
+  // it appears that if you set DELTA_RADIUS appropriately, the below is equivalent to above
   delta[X_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2
                        - sq(DELTA_TOWER1_X-cartesian[X_AXIS])
                        - sq(DELTA_TOWER1_Y-cartesian[Y_AXIS])
@@ -3270,6 +3317,7 @@ void calculate_delta(float cartesian[3])
                        - sq(DELTA_TOWER3_X-cartesian[X_AXIS])
                        - sq(DELTA_TOWER3_Y-cartesian[Y_AXIS])
                        ) + cartesian[Z_AXIS];
+#endif
   /*
   SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
   SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
@@ -3284,6 +3332,7 @@ void calculate_delta(float cartesian[3])
 // Adjust print surface height by linear interpolation over the bed_level array.
 void adjust_delta(float cartesian[3])
 {
+#ifdef ENABLE_AUTO_BED_LEVELING
   int half = (ACCURATE_BED_LEVELING_POINTS - 1) / 2;
   float grid_x = max(0.001-half, min(half-0.001, cartesian[X_AXIS] / ACCURATE_BED_LEVELING_GRID_X));
   float grid_y = max(0.001-half, min(half-0.001, cartesian[Y_AXIS] / ACCURATE_BED_LEVELING_GRID_Y));
@@ -3302,7 +3351,7 @@ void adjust_delta(float cartesian[3])
   delta[X_AXIS] += offset;
   delta[Y_AXIS] += offset;
   delta[Z_AXIS] += offset;
-
+#endif
   /*
   SERIAL_ECHOPGM("grid_x="); SERIAL_ECHO(grid_x);
   SERIAL_ECHOPGM(" grid_y="); SERIAL_ECHO(grid_y);

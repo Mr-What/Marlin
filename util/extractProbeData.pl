@@ -5,8 +5,8 @@
 # by Octave (MATLAB) or Excell
 while (<STDIN>) {
     chomp;
-    if (m/^Bed x: /) {
-	s/Bed x: //;
+    if (m/Bed x: /) {
+	s/^.*Bed x: //;
 	s/y: //;
 	s/z: //;
 	print "$_\n";

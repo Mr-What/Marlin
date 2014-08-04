@@ -6,12 +6,17 @@
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
 // --------- Commonly altered calibration settings (ab)
-#define MANUAL_Z_HOME_POS 245.7  // roughly 245 for ab build, For delta: Distance between nozzle and print surface after homing.
+// set this to slightly less than actual max dist from bed, so that
+// we can use endstop-adjustments to fine-tune.
+#define MANUAL_Z_HOME_POS 235
 
 // Radius from center of bed to ?vert tower?
-// Increasing this number makes Z=const surface more  bowl-shaped (center  lower than edges)
-// Decreasing this number makes Z=const surface more igloo-shaped (center higher than edges)
-#define DELTA_RADIUS 112
+// Decreasing this number makes Z=const surface more  bowl-shaped (center  lower than edges)
+// Increasing this number makes Z=const surface more igloo-shaped (center higher than edges)
+#define DELTA_RADIUS 108.1
+
+#define Z_PROBE_OFFSET_FROM_EXTRUDER -6.88
+
 
 //===========================================================================
 //============================= DELTA Printer ===============================
@@ -114,13 +119,13 @@
 #define DELTA_SEGMENTS_PER_SECOND 160
 
 // Center-to-center distance of the holes in the diagonal push rods.
-#define DELTA_DIAGONAL_ROD 213.4 // mm
+#define DELTA_DIAGONAL_ROD 217.95 // mm
 
 // Horizontal offset from middle of printer to smooth rod center.
 //#define DELTA_SMOOTH_ROD_OFFSET 107 //128.0 // mm
 
 // Horizontal offset of the universal joints on the end effector.
-//#define DELTA_EFFECTOR_OFFSET 47.4 //19.9 // mm
+#define DELTA_EFFECTOR_OFFSET 20 // mm  (from effectorC.scad)
 
 // Horizontal offset of the universal joints on the carriages.
 //#define DELTA_CARRIAGE_OFFSET 47.4 // 19.5 // mm
@@ -132,20 +137,29 @@
 //#define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET)
 
 // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
-#define DELTA_PRINTABLE_RADIUS 70.0
+#define DELTA_PRINTABLE_RADIUS 75.0
 
 // Effective X/Y positions of the three vertical towers.
 #define SIN_60 0.8660254037844386
 #define COS_60 0.5
-#define DELTA_TOWER1_X -SIN_60*DELTA_RADIUS // front left tower
-#define DELTA_TOWER1_Y -COS_60*DELTA_RADIUS
+// on my current build Tower1 carriage is a bit thinner than others
+#define DELTA_TOWER1_X -SIN_60*(DELTA_RADIUS+.6) // front left tower
+#define DELTA_TOWER1_Y -COS_60*(DELTA_RADIUS+.6)
 #define DELTA_TOWER2_X SIN_60*DELTA_RADIUS // front right tower
 #define DELTA_TOWER2_Y -COS_60*DELTA_RADIUS
 #define DELTA_TOWER3_X 0.0 // back middle tower
 #define DELTA_TOWER3_Y DELTA_RADIUS
 
+// If the DELTA_RADIUS is the linkage radius MINUS EFFECTOR_OFFSET, we don't need this!
+//#define EFFECTOR_OFFSET1_X -SIN_60*DELTA_EFFECTOR_OFFSET // toward front left tower
+//#define EFFECTOR_OFFSET1_Y -COS_60*DELTA_EFFECTOR_OFFSET
+//#define EFFECTOR_OFFSET2_X  SIN_60*DELTA_EFFECTOR_OFFSET // toward front right tower
+//#define EFFECTOR_OFFSET2_Y -COS_60*DELTA_EFFECTOR_OFFSET
+//#define EFFECTOR_OFFSET3_X  0.0                          // toward back middle tower
+//#define EFFECTOR_OFFSET3_Y         DELTA_EFFECTOR_OFFSET
+
 // Diagonal rod squared
-#define DELTA_DIAGONAL_ROD_2 pow(DELTA_DIAGONAL_ROD,2)
+#define DELTA_DIAGONAL_ROD_2 (DELTA_DIAGONAL_ROD*DELTA_DIAGONAL_ROD)
 
 //===========================================================================
 //=============================Thermal Settings  ============================
@@ -331,7 +345,7 @@
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Y_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
-const bool Z_MIN_ENDSTOP_INVERTING = true; // set to true to invert the logic of the endstop.
+const bool Z_MIN_ENDSTOP_INVERTING = false;//true; // set to true to invert the logic of the endstop.
 const bool X_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Y_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
@@ -389,25 +403,26 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #ifdef ENABLE_AUTO_BED_LEVELING
 
   // these are the positions on the bed to do the probing
-  #define DELTA_PROBABLE_RADIUS (DELTA_PRINTABLE_RADIUS-10)
+  #define DELTA_PROBABLE_RADIUS (DELTA_PRINTABLE_RADIUS-15)
   #define LEFT_PROBE_BED_POSITION -DELTA_PROBABLE_RADIUS
   #define RIGHT_PROBE_BED_POSITION DELTA_PROBABLE_RADIUS
   #define BACK_PROBE_BED_POSITION DELTA_PROBABLE_RADIUS
   #define FRONT_PROBE_BED_POSITION -DELTA_PROBABLE_RADIUS
 
   // these are the offsets to the probe relative to the extruder tip (Hotend - Probe)
-  // I'm using probless (pressure sensors on print plate), so I guess 0 is ok (ab)
-  #define X_PROBE_OFFSET_FROM_EXTRUDER 0//-1.0
-  #define Y_PROBE_OFFSET_FROM_EXTRUDER 0//21.0
-  #define Z_PROBE_OFFSET_FROM_EXTRUDER 0//-6.7
+  #define X_PROBE_OFFSET_FROM_EXTRUDER 3.3//-1.0
+  #define Y_PROBE_OFFSET_FROM_EXTRUDER 15 //21.0
+  // moved this to top of file since it gets re-set a lot in calibration...
+  //  until I can figure out how to tweak it in the eeprom (ab)
+  //#define Z_PROBE_OFFSET_FROM_EXTRUDER -6
 
-  #define Z_RAISE_BEFORE_HOMING 4       // (in mm) Raise Z before homing (G28) for Probe Clearance.
+  #define Z_RAISE_BEFORE_HOMING 10      // (in mm) Raise Z before homing (G28) for Probe Clearance.
                                         // Be sure you have this distance over your Z_MAX_POS in case
 
   #define XY_TRAVEL_SPEED 8000         // X and Y axis travel speed between probes, in mm/min
 
   #define Z_RAISE_BEFORE_PROBING 100  //How much the extruder will be raised before traveling to the first probing point.
-  #define Z_RAISE_BETWEEN_PROBINGS 5  //How much the extruder will be raised when traveling from between next probing points
+  #define Z_RAISE_BETWEEN_PROBINGS 10 //How much the extruder will be raised when traveling from between next probing points
 
 
   //If defined, the Probe servo will be turned on only during movement and then turned off to avoid jerk
@@ -503,10 +518,10 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
 // M502 - reverts to the default "factory settings".  You still need to store them in EEPROM afterwards if you want to.
 //define this to enable EEPROM support
-//#define EEPROM_SETTINGS
+#define EEPROM_SETTINGS
 //to disable EEPROM Serial responses and decrease program space by ~1700 byte: comment this out:
 // please keep turned on if you can.
-//#define EEPROM_CHITCHAT
+#define EEPROM_CHITCHAT
 
 // Preheat Constants
 #define PLA_PREHEAT_HOTEND_TEMP 180
