@@ -1,5 +1,5 @@
 % Given a set of measurements on the bed surface, guess
-% the tower endstop and DELTA_RADIUS errors that are most
+% the tower endstop errors that are most
 % likely to have caused this distortion.
 %
 % Assumes delta bed coordinates are:
@@ -17,9 +17,9 @@
 %                   (kind of a radius - effector_offset)
 %       RodLen   -- length between center of pivots on diagonal rods
 %
-% RETURN:  values to SUBTRACT from DELTA_RADIUS and tower offset(M666 X Y Z)
-%          settings to calibrate print bed
-function [deltaErr, towerErr] = guessDeltaErr(DP,meas)
+% RETURN:  values to SUBTRACT from tower offset(M666 X Y Z)
+%          settings to level print bed
+function towerErr = guessDeltaErr(DP,meas)
 
 % initial data plot
 figure(2);
@@ -34,13 +34,12 @@ GuessParams = DP;
 GuessParams.meas = meas;
 GuessParams.verbose = 0;
 [dErr,nEval,status,err] = SimplexMinimize(...
-              @(p) deltaGuessErr(p,GuessParams),...
-   	      [0 0 0 0], 0.1+[0 0 0 0], 0.005+[0 0 0 0], 300)
-deltaErr =-dErr(1);
-towerErr =-dErr(2:4);
+              @(p) deltaGuessEndstopErr(p,GuessParams),...
+   	      [0 0 0], 0.1+[0 0 0], 0.005+[0 0 0], 300)
+towerErr =-dErr;
 
 % plot delta parameter fit
-errZ = deltaErrZ(dErr,GuessParams);
+errZ = deltaEndstopErrZ(dErr,GuessParams);
 plot3(meas(:,1),meas(:,2),errZ+meas(:,3),'r.');
 #legend('Parabolic Fit to measurements','Measured','Delta Fit Points');
 xlabel('X');ylabel('Y');
@@ -68,23 +67,21 @@ hold off
 end
 
 % Error metric for minimization
-function err = deltaGuessErr(p,DP)
-err = deltaErrZ(p,DP);
+function err = deltaGuessEndstopErr(p,DP)
+err = deltaEndstopErrZ(p,DP);
 err = mean(err .* err);
 disp(sqrt(err))
 end
 
 % retrieve whole error vector
-function errZ = deltaErrZ(p,GP)
-DP = struct('RodLen',GP.RodLen,...
-            'RADIUS',GP.RADIUS+p(1));
+function errZ = deltaEndstopErrZ(p,DP)
 err = 0;
-n = size(GP.meas,1);
+n = size(DP.meas,1);
 errZ = zeros(n,1);
 for i=1:n
-  d0 = cart2delta(GP,GP.meas(i,1),GP.meas(i,2),0);
-  de = d0 + p(2:4);  % delta positions with position offset error
+  d0 = cart2delta(DP,DP.meas(i,1),DP.meas(i,2),0);
+  de = d0 + p;  % delta positions with position offset error
   dz = delta2cart(DP,de(1),de(2),de(3));
-  errZ(i) = dz(3) - GP.meas(i,3);
+  errZ(i) = dz(3) - DP.meas(i,3);
 end
 end
