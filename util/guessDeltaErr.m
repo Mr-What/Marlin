@@ -17,7 +17,7 @@
 %                   (kind of a radius - effector_offset)
 %       RodLen   -- length between center of pivots on diagonal rods
 %
-% RETURN:  values to ADD to DELTA_RADIUS and tower offset(M666 X Y Z)
+% RETURN:  values to SUBTRACT from DELTA_RADIUS and tower offset(M666 X Y Z)
 %          settings to calibrate print bed
 function [deltaErr, towerErr] = guessDeltaErr(DP,meas)
 
@@ -36,7 +36,7 @@ GuessParams.verbose = 0;
 [dErr,nEval,status,err] = SimplexMinimize(...
               @(p) deltaGuessErr(p,GuessParams),...
    	      [0 0 0 0], 0.1+[0 0 0 0], 0.005+[0 0 0 0], 300)
-deltaErr = dErr(1);
+deltaErr =-dErr(1);
 towerErr =-dErr(2:4);
 
 % plot delta parameter fit
