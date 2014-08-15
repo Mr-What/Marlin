@@ -5,10 +5,10 @@
 # by Octave (MATLAB) or Excell
 while (<STDIN>) {
     chomp;
-    if (m/Bed x: /) {
-	s/^.*Bed x: //;
-	s/y: //;
-	s/z: //;
+    if (m/Bed x: /i) {
+	s/^.*Bed x: //i;
+	s/y: //i;
+	s/z: //i;
 	print "$_\n";
     }
 }
