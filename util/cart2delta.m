@@ -17,8 +17,10 @@ function delta = cart2delta(DeltaParams,x,y,z)
 
 s = 0.8660254037844386; % sind(60)
 c = 0.5;                % cosd(60)
-T1x = -s * (DeltaParams.RADIUS+.6);  % current build has 1 thin carriage
-T1y = -c * (DeltaParams.RADIUS+.6);
+%T1x = -s * (DeltaParams.RADIUS+.6);  % current build has 1 thin carriage
+%T1y = -c * (DeltaParams.RADIUS+.6);
+T1x = -s * DeltaParams.RADIUS;
+T1y = -c * DeltaParams.RADIUS;
 T2x =  s * DeltaParams.RADIUS;
 T2y = -c * DeltaParams.RADIUS;
 T3x =    0;
