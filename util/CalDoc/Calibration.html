@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<TITLE>Calibration of Deltabots</TITLE>
+</head>
+<H1 center>Calibration of Delta 3D Printers</H1>
+
+<BODY STYLE="font-family: Arial, Helvetica">
+There are many tutorials on the calibration of Deltabots, like delta 3D printers.
+Many cover an inexact manual method which can be slow to converge.
+This essay covers a minimalistic automated procedure with fast convergence.
+Key calibration parameters are identified, and solved for by brute force search,
+and observations are provided to help increase understanding of the effects
+of common fabrication innacuracies on the performance and accuracy of a deltabot.
+
+<H2>Calibration Distortion Examples</H2>
+
+As the effector is commanded to scan over the bed, the commanded height
+on each tower follows a pattern like:
+<IMG SRC="CarriagePosition.svg">
+for an ideal deltabot in perfect calibration.
+
+<H3>Rod Length</H3>
+<P>The scale of a printed object depends on the length of the delta rods.
+Since this dimension is measurable, I prefer to leave it constant as much as possible.
+If it is mis-measured, you can get bed-scan distortions like these:
+<IMG SRC="distortLongRod.svg">
+<IMG SRC="distortShortRod.svg">
+You may note that there is a height shift on the close order to the amount
+of measurement error in the diagonal rod, and a very small curvature distortion,
+which I will call <B>bowl/dome distortion</B>.
+Shift up and down is hard to measure, and usually calibrated, so it is hard to measure
+diagonal rod length errors from bed probes.
+The bowl/dome distortion is rather small compared to the level shift.
+These are all reasons why I advocate for measuring diagonal rod length carefully,
+and holding it fixed for most calibrations.
+
+<H3>Delta Radius</H3>
+<P>You will note that the distortion from the diagonal rod length is similar
+to the distortion from a mis-set DELTA_RADIUS:
+<IMG SRC="distortShortRADIUS.svg">
+<IMG SRC="distortLongRADIUS.svg">
+Note that the bowl/dome distortion from this error is about 4x as pronounced
+as the bowl/dome distortion caused by the same error in delta rod length.
+This makes DELTA_RADIUS a better candidate for computation by calibration procedures,
+as compared to the diagonal rod length.
+
+<P>The DELTA_RADIUS is <EM>virtual</EM> and hard to measure.
+It would be the distance from the center of pivots on the effector head to
+the center of the pivots on the tower carriages, when the effector is centered,
+projected into the ideal bed plane.
+Since the location of <em>center</em> somewhat arbitrary, and it
+is hard to measure projections of virtual points into a virtual ideal plane,
+this measurement is best left to calibration, and not measurement.
+
+<H3>Tower Zero Level</H3>
+<P>One of the most common errors would be tower endstop settings.
+When these are in error, the primary effect is to produce a tilt to the
+bed scan:
+<IMG SRC="distortTowerUp.svg">
+This will be the most common distortion, and must be tracked reguarly,
+or your prints may not stick to the bed properly, or worse you may crash your
+hotend into the bed.
+<BR>Combine similar errors from all 3 towers, and you can produce 
+a distortion which is (mostly) a plane of arbitrary tilt.
+
+<H3>Tower Placement Symmetry</H3>
+<P>I worry that my fabrication skills are not professional class.
+If my towers do not map out the perfect vertices of an equilateral triangle,
+I could get distortions like these, if we assume in our motion model that the
+tower placement was perfect:
+<IMG SRC="distortTowerOut.svg">
+<IMG SRC="distortTowerIn.svg">
+
+<P>Need more plots/data of XY-distortions.  Especially from Tower placement error.
+
+<!-- IMG SRC="../../doc/towerShiftDistortion.svg" -->
+
+<!-- not here? IMG SRC="../../util/probeSpiral.svg" -->
+<!-- IMG SRC="../../util/deltaFit.svg" -->
+
+
+<H2>Marlin Model</H2>
+The model of a deltabot inherent in the Marlin firmware makes several assertions for simplicity.
+<UL>
+<LI>Towers are parallel</LI>
+<LI>Effector moves in a perfect plane perpendicular to the towers</LI>
+<LI>Towers form a perfect equilateral triangle</LI>
+<LI>All rods are exactly the same length</LI>
+</UL>
+The biggest problem of these seems to be the equilateral triangle assertion.
+It will cause some XY distortions.
+RichieC has an experimental calibration procedure which can adjust for tower placement errors.
+As written, I fear that it may suffer from over-fit, since it also automatically adjusts
+things like rod-length, which are hard to measure from bed probes, and are often well measured.
+
+I have not seen anybody address the parallel tower problem.
+(I should simulate it, to see how significant expected errors might be)
+For my next design, I think that the parallel tower problem can (mostly) be solved by
+well built bases with tight tolerance tower connections.
+There may still be a risk of twist, but they should be (mostly) parallel to each other,
+and much of the twist could be calibrated out by with a bed tilt.
+
+<H2>Calibration Procedures</H2>
+
+<h3>Manual Measurement Procedure</H3>
+
+<H3>Automated Measurement Procedure</h3>
+
+<H3>Tilt and Scale Correction</H3>
+
+<H3>Tilt only Correction</H3>
+
+<h2>Measurement Issues</H3>
+
+Backlash
+
+<P>Backlash and drift
+
+<P>FSR comparison
+
+<P>Compensation by randomization
+
+<P>Compensation by randomization and re-homing
+
+<P>Conclusions
+<BR>DELTA_RADIUS seems to be fairly stable.
+Most of the time, only a tilt/shift correction is necessary.
+Better adjustment parameters can be obtained by searching for the optimal
+solution which alters only those parameters.
+
+<P>Tilt-only calibration recheck can be done in less than 5 minutes, and only
+needs to be repeated every several days, and/or when the printer is moved.
+
+</body></html>
