@@ -13,22 +13,19 @@
 %                   of tower pivot for diagonal arm, minus effector offset
 %                   (kind of a radius - effector_offset)
 %       RodLen   -- length between center of pivots on diagonal rods
+% DeltaParams can contain these for distortions:
+%       radiusErr -- Tower radius error, each tower
 function cart = delta2cart(DP,T1z,T2z,T3z)
 DeltaParams = DP;
+DeltaParams.radiusErr = getFieldDef(DP,'radiusErr',[0,0,0]);
 s = 0.8660254037844386; % sind(60)
 c = 0.5;                % cosd(60)
-%T1x = -s * (DP.RADIUS+.6);  % current build has one thin carriage
-%T1y = -c * (DP.RADIUS+.6);
-T1x = -s * DP.RADIUS;
-T1y = -c * DP.RADIUS;
-T2x =  s * DP.RADIUS;
-T2y = -c * DP.RADIUS;
+T1x = -s * (DeltaParams.RADIUS + DeltaParams.radiusErr(1));
+T1y = -c * (DeltaParams.RADIUS + DeltaParams.radiusErr(1));
+T2x =  s * (DeltaParams.RADIUS + DeltaParams.radiusErr(2));
+T2y = -c * (DeltaParams.RADIUS + DeltaParams.radiusErr(2));
 T3x =    0;
-T3y =      DP.RADIUS;
-
-%%% indroduce tower position error to test effects
-%T3y = T3y-1;
-%%%
+T3y =       DeltaParams.RADIUS + DeltaParams.radiusErr(3);
 
 DeltaParams.tower = [T1x T1y T1z; T2x T2y T2z; T3x T3y T3z];
 zMin = sqrt(DeltaParams.RodLen ^ 2 - 4*(DeltaParams.RADIUS ^2));
@@ -39,7 +36,6 @@ if ((T1z < zMin) || (T2z < zMin) || (T3z < zMin))
 end
 
 % ? add center err here to test?
-
 R2 = DP.RodLen * DP.RodLen;
 
 % try iterative soln method
