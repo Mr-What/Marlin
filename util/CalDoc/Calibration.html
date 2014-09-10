@@ -152,15 +152,61 @@ to estimate a potential change of rod-length setting.
 
 <h2>Measurement Issues</H3>
 
-Backlash
+Initial stock Marlin bed scan:
+<IMG SRC="probeErrPattern.gif">
+Odd zig-zag pattern to automated probe.
+Still not exactly sure of source.
+Seemed less pronounced on manual probe, wither with switch or FSR.
+Reduced when rebuilt frame <EM>tighter</EM>, but not gone.
+<IMG SRC="probeErrPat2.gif">
+<BR>Still present even when commanding offset on probe, then approaching each
+probe point from same direction.
 
-<P>Backlash and drift
+<P>Data around bed804c.dat looks fairly typical.
+300um range, with zig-zag, initial loose build.
+<BR>bed812d.dat appears to be a more careful manual scan.
+can't say if there is the zig-zag problem.
+<BR>original data from bed812d_orig.dat shows good repeatability of measurements (FSR?)
 
-<P>FSR comparison
+<BR>bed813c.dat shows zig-zag pattern remains on auto-probe, even when
+each point is probed several times.  Repeated pronbes good. full data at bed813c_full.dat
 
-<P>Compensation by randomization
+<P>Repeated probe scan backwards and forwards.
+noting data drift.  bed813d.dat
+<BR>Not sure where this comes from.
+Work around on random probe was to re-home periodically.
 
-<P>Compensation by randomization and re-homing
+<P>bed813f.dat shows repeated zig-zag, no drift when scanning forwards and back.
+813g verifies that results each probe can be repeated and give same number.
+no change to zig-zag.
+
+<P>814d shows accuracy drift under random scan.
+This may have gone away after re-build, but I haven't double checked yet.
+re-home may no longer be necessary.
+
+<P>bed903d.dat after re-build and re-cal.  This may be calibrated, but zig-zag remains
+on ordered scan.
+
+<P>903e back to random ordered scan.  Hard to say if there is zig-zag, 
+but sharp error at tip indicated tower placement issue.
+
+<P>Was not 'scientific' enough to note all experiments, unfortunately.
+Some scans had trick where I approach from same direction every time.
+Was able to repeat zig-zag. odd.
+
+<P>Random order seems to spread whatever that zig-zag error was, and
+produce reliable results.
+
+<P>TO DO:  repeat probes of same points on random ordered grid,
+see how repeatable they are.
+
+<UL>
+<LI>Backlash</LI>
+<LI>Backlash and drift</LI>
+<LI>FSR comparison</LI>
+<LI>Compensation by randomization</LI>
+<LI>Compensation by randomization and re-homing</LI>
+</UL>
 
 <P>Conclusions
 <BR>DELTA_RADIUS seems to be fairly stable.
@@ -174,5 +220,13 @@ needs to be repeated every several days, and/or when the printer is moved.
 <P>It is my hope that more reliable and robust results will be achieved by
 calibrating the rod-length from XY distortion measurements alone, while
 all other parameters can be calibrated from measurements of Z plane distortion.
+
+<P>TO DO: add tower radius adjustments to bed-scan optimization.
+Check RichieC's code.
+Check state of smoothie... this may be a better candidate firmware.
+
+<P>Try to figure out what tower radius adjustment model really compensates for.
+I wonder if carriage non-center, would make parallelograms not quite right... tipping effector head?  This model seems to assume that all tower carriages are perpendicular to
+line to ideal center.  Most tower mis-alignments will violate this assertion, won't they?
 
 </body></html>
