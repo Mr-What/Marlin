@@ -5,7 +5,7 @@
 #### Parameters:
 $xOffset = -4;   $yOffset = 7;  # switch position relative to extruder tip
 $dx=15;#7.5;  # space between samples on grid
-$z0=14;  # start probe from this height
+$z0=10;  # start probe from this height
 $radMax = 70.1;  # No probes more than this far from center
 ####
 
@@ -40,6 +40,15 @@ while ($yj < $radMax) {
 ## diagnostic dump
 for ($i=0; $i<= $#x; $i++) { printf(";%.2f\t%.2f\n",$x[$i],$y[$i]); }
 
+### lets probe each point 3X to check for repeatability
+local $n = $#x + 1;
+for ($j=0; $j < 2; $j++) {
+  for ($i=0; $i < $n; $i++) {
+    $x[$#x+1] = $x[$i];
+    $y[$#y+1] = $y[$i];
+  }
+}
+
 print "G21 ; set units to millimeters
 M107
 G28 ; home all axes
@@ -67,18 +76,7 @@ G90 ; use absolute coordinates
 #;G1 Z$z0 ; back up off plate, probe complete
 #";
 
-sub printProbe() {
-    #printf($zprobe,$xx+2,$yy+2,$xx,$yy,$initialPause);
-    print "G1 X$xx Y$yy Z$z0 ; move to above probe position
-G4 P9  ; pause (ms)
-G30 ; z-probe
-G1 F3333 ; speed up
-G1 Z$z0 ; return to above probe spot
-";
-
-}
-
-local $reHome = 22;
+local $reHome = 999;#22;
 $n = $#x + 1;
 while($n > 0) {
     local $i = int(rand($n));
@@ -102,6 +100,17 @@ G28
 print "G28 ; done, home\n";
 
 ##################
+
+sub printProbe() {
+    #printf($zprobe,$xx+2,$yy+2,$xx,$yy,$initialPause);
+    print "G1 X$xx Y$yy Z$z0 ; move to above probe position
+G4 P99  ; pause (ms)
+G30 ; z-probe
+G1 F3333 ; speed up
+G1 Z$z0 ; return to above probe spot
+";
+
+}
 
 sub quadScan() {
     local $i=0;
