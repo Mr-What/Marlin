@@ -12,30 +12,36 @@
 %       RADIUS   -- Marlin DELTA_RADIUS, which is radius from tip to center
 %                   of tower pivot for diagonal arm, minus effector offset
 %                   (kind of a radius - effector_offset)
+%   XOR radius(3) - Marlin DELTA_RADIUS, unique for each tower
+%
 %       RodLen   -- length between center of pivots on diagonal rods
 % DeltaParams can contain these for distortions:
-%       radiusErr -- Tower radius error, each tower
+%       radiusErr -- Tower radius error, each tower, added to RADIUS
 function cart = delta2cart(DP,T1z,T2z,T3z)
-DeltaParams = DP;
-DeltaParams.radiusErr = getFieldDef(DP,'radiusErr',[0,0,0]);
+DeltaParams.RodLen = DP.RodLen;
+if (isfield(DP,'RADIUS'))
+   radius = DP.RADIUS + getFieldDef(DP,'radiusErr',[0,0,0]);
+else
+   radius = DP.radius;  % assume lower case is 3-element radius
+end
+DeltaParams.radius = radius;
 s = 0.8660254037844386; % sind(60)
 c = 0.5;                % cosd(60)
-T1x = -s * (DeltaParams.RADIUS + DeltaParams.radiusErr(1));
-T1y = -c * (DeltaParams.RADIUS + DeltaParams.radiusErr(1));
-T2x =  s * (DeltaParams.RADIUS + DeltaParams.radiusErr(2));
-T2y = -c * (DeltaParams.RADIUS + DeltaParams.radiusErr(2));
-T3x =    0;
-T3y =       DeltaParams.RADIUS + DeltaParams.radiusErr(3);
+T1x = -s * radius(1);
+T1y = -c * radius(1);
+T2x =  s * radius(2);
+T2y = -c * radius(2);
+T3x = 0;
+T3y = radius(3);
 
 DeltaParams.tower = [T1x T1y T1z; T2x T2y T2z; T3x T3y T3z];
-zMin = sqrt(DeltaParams.RodLen ^ 2 - 4*(DeltaParams.RADIUS ^2));
+zMin = sqrt(DeltaParams.RodLen ^ 2 - 4*(min(radius) ^2));
 if ((T1z < zMin) || (T2z < zMin) || (T3z < zMin))
    %disp('Non-Physical');disp([T1z T2z T3z zMin]);
    cart = [0,0,0];
    return
 end
 
-% ? add center err here to test?
 R2 = DP.RodLen * DP.RodLen;
 
 % try iterative soln method

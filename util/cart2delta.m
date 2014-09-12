@@ -15,16 +15,19 @@
 %       RodLen   -- length between center of pivots on diagonal rods
 function delta = cart2delta(DeltaParams,x,y,z)
 
+if (isfield(DeltaParams,'RADIUS'))
+   radius = DeltaParams.RADIUS + [0 0 0];  # assumes equal radius
+else
+   radius = DeltaParams.radius;
+end
 s = 0.8660254037844386; % sind(60)
 c = 0.5;                % cosd(60)
-%T1x = -s * (DeltaParams.RADIUS+.6);  % current build has 1 thin carriage
-%T1y = -c * (DeltaParams.RADIUS+.6);
-T1x = -s * DeltaParams.RADIUS;
-T1y = -c * DeltaParams.RADIUS;
-T2x =  s * DeltaParams.RADIUS;
-T2y = -c * DeltaParams.RADIUS;
-T3x =    0;
-T3y =      DeltaParams.RADIUS;
+T1x = -s * radius(1);
+T1y = -c * radius(1);
+T2x =  s * radius(2);
+T2y = -c * radius(2);
+T3x = 0;
+T3y = radius(3);
 
 dx1 = T1x - x;
 dy1 = T1y - y;
@@ -37,4 +40,3 @@ delta = sqrt(d2 - [dx1*dx1 + dy1*dy1,...
 		   dx2*dx2 + dy2*dy2,...
 		   dx3*dx3 + dy3*dy3]) + z;
 end
-
