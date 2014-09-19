@@ -37,7 +37,7 @@ GuessParams.verbose = 0;
 [dErr,nEval,status,err] = SimplexMinimize(...
               @(p) deltaGuessErr(p,GuessParams),...
    	      [0 0 0 0 0 0], 0.1+[0 0 0 0 0 0], 0.005+[0 0 0 0 0 0], 300)
-radiusErr = dErr(1:3);
+radiusErr =-dErr(1:3);
 towerErr  =-dErr(4:6);
 
 % plot delta parameter fit

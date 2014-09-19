@@ -15,11 +15,12 @@
 %       RADIUS   -- Marlin DELTA_RADIUS, which is radius from tip to center
 %                   of tower pivot for diagonal arm, minus effector offset
 %                   (kind of a radius - effector_offset)
+% XOR   radius(3) -- independant radii
 %       RodLen   -- length between center of pivots on diagonal rods
 %
 % RETURN:  values to SUBTRACT from tower offset(M666 X Y Z)
 %          settings to level print bed
-function towerErr = guessDeltaErr(DP,meas)
+function towerErr = guessDeltaEndstopErr(DP,meas)
 
 % initial data plot
 figure(2);

@@ -30,7 +30,12 @@ plot3(meas(:,1),meas(:,2),meas(:,3),'+');
 title('Parabolic fit to measurements, + is measurements, . are fit points');
 pause(0.1);
 
-GuessParams = DP;
+GuessParams.RodLen = DP.RodLen;
+if (isfield(DP,'RADIUS'))
+  GuessParams.RADIUS = DP.RADIUS;
+else
+  GuessParams.RADIUS = mean(DP.radius)
+end
 GuessParams.meas = meas;
 GuessParams.verbose = 0;
 [dErr,nEval,status,err] = SimplexMinimize(...
