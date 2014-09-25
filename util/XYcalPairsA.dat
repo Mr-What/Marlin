@@ -4,18 +4,25 @@ A2 B2
 A2 C2
 A3 B3
 A3 C3
+A3 E1
 B1 C5
 B2 C6
 B3 C4
+B3 E2 i
 C1 C5 i
 C2 C6 i
 C3 C4 i
+C3 E2 i
+C4 E1
 C1 I1 i
 C2 I2 i
 C3 I3 i
 D1 D2 i
 D3 D4 i
 D5 D6 i
+E3 E4
+E1 E2
+E1 I3
 G1 H1
 G2 H2
 G3 H3
