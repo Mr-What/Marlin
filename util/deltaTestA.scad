@@ -38,6 +38,16 @@ union() {
 
   // more z-scale tests
   translate([0,5+4,12/2]) cube([8,8,12],center=true);
+
+  // This little post ensures that slic3r puts drawing centered correctly,
+  // without manual 15.768 mm offset mentioned above.
+  // I also had problems with re-melt when printing one tall spire.
+  // this will force the head to move on each layer and give things more time
+  // to cool
+  translate([0,-70+4,5]) cube([8,8,14],center=true);
+  for(a=[-1,1]) translate([10*a,-50,1])
+    rotate([0,0,-a*30]) cube([2,40,6],center=true);
+
 }
 
 %translate([0,0,-1]) rotate([0,0,30]) cylinder(h=2,r=70,$fn=6);
