@@ -24,10 +24,12 @@
 function [radiusErr, diagErr, spread,DP] = guessDeltaXYerr(DP1,pointFile,pairFile,measFile)
 
 DP = DP1;
+DP.verbose=1;
 DP.cal.points = loadCalPointsFile(DP,pointFile); % load points, compute tower offst
 DP.cal.pairs  = loadCalPairsFile(DP,pairFile); % load pair file, compute ideal distances
 DP.meas = loadMeasurements(DP,measFile);
-DP.verbose=1;
+
+err=deltaGuessErrXY([0,0,0,.05,.1],DP)
 %[dErr,nEval,status,err] = SimplexMinimize(...
 %              @(p) deltaGuessErrXY(p,DP),...
 %   	      [0 0 0 0 0], 0.1*[1 1 1 1 0.3], 0.005*[1 1 1 1 1], 300)
@@ -48,13 +50,25 @@ end
 function err = deltaErrXY(p,GP)
 DP = struct('RodLen',GP.RodLen+p(4),...
             'radius',GP.radius+p(1:3));
-n = size(GP.meas,1);
+n = length(GP.meas.dist)
 errD = zeros(n,1);
-spread = p(5);
+spread = p(5)
 for i=1:n
-  a = delta2cart(DP,GP.cal.pairs(i,4),GP.cal.pairs(i,5),0);
-  b = delta2cart(DP,GP.cal.pairs(i,6),GP.cal.pairs(i,7),0);
-  err(i) = norm(a-b) - GP.meas(i,3);
+  iPair = GP.meas.idx(i);  % index of point pair measured
+  pIdx = GP.cal.pairs.idx(iPair,:);  % indices of two points measured
+  ta = GP.cal.points.twr(pIdx(1),:); % tower commands, point a
+  tb = GP.cal.points.twr(pIdx(2),:); % tower commands, point b
+  a = delta2cart(DP,ta(1),ta(2),ta(3)); % recover position with err
+  b = delta2cart(DP,tb(1),tb(2),tb(3));
+  d = norm(a-b); % simulated expected measurement
+
+  % adjust simulted measurement by print spread, to match physical
+  if (GP.cal.pairs.inside(iPair))
+     d = d - 2*spread;
+  else
+     d = d + 2*spread;
+  end
+  err(i) = d - GP.meas.dist(i);
 end
 end
 
@@ -63,17 +77,23 @@ end
 % load points, compute commanded tower positions for those points
 function points = loadCalPointsFile(DP,pointFile)
    fd = fopen(pointFile,'rt');
+   if (fd < 0)
+     disp(['Unable to read ',pointFile]);
+     return;
+   end
    count = 3;
    n = 0;
    while(count == 3)
-      [pNam,x,y,count,errMsg] = fscanf(fd,'%s %f %f','C');
+      %[pNam,x,y,count,errMsg] = fscanf(fd,'%s %f %f','C');
+      [pNam,x,y,count] = fscanf(fd,'%s %f %f','C');
       if (count == 3)
          n=n+1;
          name(n,:) = pNam;  % should be exactly 2 characters
          loc(n,:) = [x,y];
          twr(n,:) = cart2delta(DP,x,y,0);
       else
-	  disp(errMsg);
+	  disp('end of data');
+          %disp(errMsg);
 	  disp(sprintf('After %d points loaded',n));
       end
    end
@@ -97,8 +117,6 @@ function pairs = loadCalPairsFile(DP,pairFile)
          tok = strsplit(line,' ');
          if (length(tok)>=2)
             n=n+1;
-            %nameA(n,:) = tok{1};
-            %nameB(n,:) = tok{2};
             inside(n)=0;  % default is outer dimension measurement
             if (length(tok)==3)
                if (tok{3} == 'i')
@@ -141,48 +159,60 @@ end
 function [idx,dist]=loadMeasData(DP,fd)
    n = 0;
    while(1)
-      [aNam,bNam,d,count,errMsg] = fscanf(fd,'%s %s %f','C');
-disp(sprintf('%s %s %f',aNam,bNam,d));
+      %[aNam,bNam,d,count,errMsg] = fscanf(fd,'%s %s %f','C');
+      [aNam,bNam,d,count] = fscanf(fd,'%s %s %f','C');
+      if (DP.verbose), disp(sprintf('%s %s %f',aNam,bNam,d)); end
       if (count != 3)
 	 return;
       end
-      idxA = getIndex(DP.cal.points.name,aNam)
-      if (idxA<=0)
-	disp([aNam,' is not a valid point name']);
-	return;
-      end
-      idxB = getIndex(DP.cal.points.name,bNam)
-      if (idxB<=0)
-	disp([bNam,' is not valid']);
-	return;
-      end
-
-      ja=(idxA==DP.cal.pairs.idx(:,1));
-      jb=(idxB==DP.cal.pairs.idx(:,2));
-      j = find(ja .* jb == 1);
-      if (length(j) > 1)
-	 disp(['Multiply defined pair ',aNam,' ',bNam]);
-	 return;
-      end
-      if (length(j)==1)
-	 n=n+1;
-	 idx(n) = j;
-	 dist(n) = d;
+      if (d <= 0)
+         disp(['Measurement ',aNam,' ',bNam,' skipped.']);
       else
-         ja=(idxA==DP.cal.pairs.idx(:,2));
-         jb=(idxB==DP.cal.pairs.idx(:,1));
-	 j = find(ja .* jb == 1);
-         if (length(j) > 1)
-            disp(['Multiply defined pair ',aNam,' ',bNam]);
-	    return;
+         ix = findPairIndex(DP,aNam,bNam);
+         if (ix > 0)
+            n=n+1;
+            idx(n) = ix;
+            dist(n) = d;
          end
-	 if (length(j)==1)
-	    n=n+1;
-	    idx(n) = j;
-	    dist(n) = d;
-	 else
-	    disp(['Pair ',aNam,' ',bNam,' not defined']);
-	 end
       end
+   end
+end
+
+% find the pair index for a measurement between the two named points
+function idx = findPairIndex(DP,aNam,bNam)
+   idx=0;
+   idxA = getIndex(DP.cal.points.name,aNam);
+   if (idxA<=0)
+      disp([aNam,' is not a valid point name']);
+      return;
+   end
+   idxB = getIndex(DP.cal.points.name,bNam);
+   if (idxB<=0)
+      disp([bNam,' is not a valid point name']);
+      return;
+   end
+
+   idx = findPairByIndex(DP.cal.pairs.idx,idxA,idxB);
+   if (idx > 0)
+      return;  % found it
+   end
+   % try other way around
+   idx = findPairByIndex(DP.cal.pairs.idx,idxB,idxA);
+   if (idx <= 0)
+      disp(['Pair ',aNam,' ',bNam,' not defined']);
+   end
+end
+
+function ix = findPairByIndex(pIdx,ia,ib)
+   ix = -1;
+   ja=(ia==pIdx(:,1));
+   jb=(ib==pIdx(:,2));
+   j = find(ja .* jb == 1);
+   if (length(j) > 1)
+      disp(sprintf('Multiply defined pair, point index %d and %d',ia,ib));
+      return;
+   end
+   if (length(j)==1)
+      ix = j;
    end
 end
