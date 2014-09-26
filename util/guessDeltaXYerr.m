@@ -58,8 +58,8 @@ for i=1:n
   pIdx = GP.cal.pairs.idx(iPair,:);  % indices of two points measured
   ta = GP.cal.points.twr(pIdx(1),:); % tower commands, point a
   tb = GP.cal.points.twr(pIdx(2),:); % tower commands, point b
-  a = delta2cart(DP,ta(1),ta(2),ta(3)); % recover position with err
-  b = delta2cart(DP,tb(1),tb(2),tb(3));
+  a = delta2cart(DP,ta); % recover position with err
+  b = delta2cart(DP,tb);
   d = norm(a-b); % simulated expected measurement
 
   % adjust simulted measurement by print spread, to match physical
