@@ -22,21 +22,24 @@ else
 end
 s = 0.8660254037844386; % sind(60)
 c = 0.5;                % cosd(60)
-T1x = -s * radius(1);
-T1y = -c * radius(1);
-T2x =  s * radius(2);
-T2y = -c * radius(2);
-T3x = 0;
-T3y = radius(3);
+%T1x = -s * radius(1);
+%T1y = -c * radius(1);
+%T2x =  s * radius(2);
+%T2y = -c * radius(2);
+%T3x = 0;
+%T3y = radius(3);
+tp = [[-s,-c]*radius(1);...
+      [ s,-c]*radius(2);...
+      0,radius(3)];  % tower positions
 
-dx1 = T1x - cart(1);
-dy1 = T1y - cart(2);
-dx2 = T2x - cart(1);
-dy2 = T2y - cart(2);
-dx3 = T3x - cart(1);
-dy3 = T3y - cart(2);
-d2 = DeltaParams.RodLen * DeltaParams.RodLen;
-delta = sqrt(d2 - [dx1*dx1 + dy1*dy1,...
-		   dx2*dx2 + dy2*dy2,...
-		   dx3*dx3 + dy3*dy3]) + cart(3);
+r2 = DeltaParams.RodLen * DeltaParams.RodLen;
+%dx1 = T1x - cart(1);
+%dy1 = T1y - cart(2);
+%dx2 = T2x - cart(1);
+%dy2 = T2y - cart(2);
+%dx3 = T3x - cart(1);
+%dy3 = T3y - cart(2);
+d = tp - [1;1;1] * cart(1:2);  % offset from tower XY to cart XY
+d2 = sum(d .* d,2)';  % square of this distance
+delta = sqrt(r2 - d2) + cart(3);
 end
