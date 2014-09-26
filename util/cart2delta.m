@@ -13,7 +13,7 @@
 %                   of tower pivot for diagonal arm, minus effector offset
 %                   (kind of a radius - effector_offset)
 %       RodLen   -- length between center of pivots on diagonal rods
-function delta = cart2delta(DeltaParams,x,y,z)
+function delta = cart2delta(DeltaParams,cart)
 
 if (isfield(DeltaParams,'RADIUS'))
    radius = DeltaParams.RADIUS + [0 0 0];  # assumes equal radius
@@ -29,14 +29,14 @@ T2y = -c * radius(2);
 T3x = 0;
 T3y = radius(3);
 
-dx1 = T1x - x;
-dy1 = T1y - y;
-dx2 = T2x - x;
-dy2 = T2y - y;
-dx3 = T3x - x;
-dy3 = T3y - y;
+dx1 = T1x - cart(1);
+dy1 = T1y - cart(2);
+dx2 = T2x - cart(1);
+dy2 = T2y - cart(2);
+dx3 = T3x - cart(1);
+dy3 = T3y - cart(2);
 d2 = DeltaParams.RodLen * DeltaParams.RodLen;
 delta = sqrt(d2 - [dx1*dx1 + dy1*dy1,...
 		   dx2*dx2 + dy2*dy2,...
-		   dx3*dx3 + dy3*dy3]) + z;
+		   dx3*dx3 + dy3*dy3]) + cart(3);
 end
