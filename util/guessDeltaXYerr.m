@@ -32,7 +32,7 @@ DP.meas = loadMeasurements(DP,measFile);
 err=deltaGuessErrXY([0,0,0,.05,.1],DP)
 %[dErr,nEval,status,err] = SimplexMinimize(...
 %              @(p) deltaGuessErrXY(p,DP),...
-%   	      [0 0 0 0 0], 0.1*[1 1 1 1 0.3], 0.005*[1 1 1 1 1], 300)
+%             [0 0 0 0 0], 0.1*[1 1 1 1 0.3], 0.005*[1 1 1 1 1], 300)
 %radiusErr =-dErr(1:3);
 %diagErr   =-dErr(4);
 %spread    = dErr(5);
@@ -92,9 +92,9 @@ function points = loadCalPointsFile(DP,pointFile)
          loc(n,:) = [x,y];
          twr(n,:) = cart2delta(DP,x,y,0);
       else
-	  disp('end of data');
+          disp('end of data');
           %disp(errMsg);
-	  disp(sprintf('After %d points loaded',n));
+          disp(sprintf('After %d points loaded',n));
       end
    end
    fclose(fd);
@@ -111,7 +111,7 @@ function pairs = loadCalPairsFile(DP,pairFile)
    while(~done)
       line = fgetl(fd);
       if (isnumeric(line))
-	  done=1;
+          done=1;
       else
          line = strtrim(line);
          tok = strsplit(line,' ');
@@ -159,11 +159,12 @@ end
 function [idx,dist]=loadMeasData(DP,fd)
    n = 0;
    while(1)
+      line = fgetl(fd);
       %[aNam,bNam,d,count,errMsg] = fscanf(fd,'%s %s %f','C');
-      [aNam,bNam,d,count] = fscanf(fd,'%s %s %f','C');
+      [aNam,bNam,d,count] = sscanf(line,'%s %s %f','C');
       if (DP.verbose), disp(sprintf('%s %s %f',aNam,bNam,d)); end
       if (count != 3)
-	 return;
+         return;
       end
       if (d <= 0)
          disp(['Measurement ',aNam,' ',bNam,' skipped.']);
