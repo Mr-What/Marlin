@@ -29,13 +29,13 @@ DP.cal.points = loadCalPointsFile(DP,pointFile); % load points, compute tower of
 DP.cal.pairs  = loadCalPairsFile(DP,pairFile); % load pair file, compute ideal distances
 DP.meas = loadMeasurements(DP,measFile);
 
-err=deltaGuessErrXY([0,0,0,.05,.1],DP)
-%[dErr,nEval,status,err] = SimplexMinimize(...
-%              @(p) deltaGuessErrXY(p,DP),...
-%             [0 0 0 0 0], 0.1*[1 1 1 1 0.3], 0.005*[1 1 1 1 1], 300)
-%radiusErr =-dErr(1:3);
-%diagErr   =-dErr(4);
-%spread    = dErr(5);
+%err=deltaGuessErrXY([0,0,0,.05,.1],DP)
+[dErr,nEval,status,err] = SimplexMinimize(...
+              @(p) deltaGuessErrXY(p,DP),...
+              [0 0 0 0 0], 0.1*[1 1 1 1 0.3], 0.005*[1 1 1 1 .5], 300)
+radiusErr =-dErr(1:3);
+diagErr   =-dErr(4);
+spread    = dErr(5);
 
 end
 
@@ -50,9 +50,9 @@ end
 function err = deltaErrXY(p,GP)
 DP = struct('RodLen',GP.RodLen+p(4),...
             'radius',GP.radius+p(1:3));
-n = length(GP.meas.dist)
+n = length(GP.meas.dist);
 errD = zeros(n,1);
-spread = p(5)
+spread = p(5);
 for i=1:n
   iPair = GP.meas.idx(i);  % index of point pair measured
   pIdx = GP.cal.pairs.idx(iPair,:);  % indices of two points measured
@@ -90,7 +90,7 @@ function points = loadCalPointsFile(DP,pointFile)
          n=n+1;
          name(n,:) = pNam;  % should be exactly 2 characters
          loc(n,:) = [x,y];
-         twr(n,:) = cart2delta(DP,x,y,0);
+         twr(n,:) = cart2delta(DP,[x,y,0]);
       else
           disp('end of data');
           %disp(errMsg);
@@ -160,6 +160,7 @@ function [idx,dist]=loadMeasData(DP,fd)
    n = 0;
    while(1)
       line = fgetl(fd);
+      if (isnumeric(line)), return; end  % end of data
       %[aNam,bNam,d,count,errMsg] = fscanf(fd,'%s %s %f','C');
       [aNam,bNam,d,count] = sscanf(line,'%s %s %f','C');
       if (DP.verbose), disp(sprintf('%s %s %f',aNam,bNam,d)); end
