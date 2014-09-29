@@ -33,6 +33,7 @@ end
 
 % load points, compute commanded tower positions for those points
 function points = loadCalPointsFile(DP,pointFile)
+   disp(['Loading point definitions from ',pointFile]);
    fd = fopen(pointFile,'rt');
    if (fd < 0)
      disp(['Unable to read ',pointFile]);
