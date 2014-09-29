@@ -32,11 +32,14 @@ pause(0.1);
 
 GuessParams.RodLen = DP.RodLen;
 if (isfield(DP,'RADIUS'))
-  GuessParams.RADIUS = DP.RADIUS;
+  GuessParams.radius = DP.RADIUS+[0,0,0];
 else
-  GuessParams.RADIUS = mean(DP.radius)
+  GuessParams.radius = mean(DP.radius)+[0,0,0]
 end
-GuessParams.meas = meas;
+GuessParams.bed.xyz = meas;
+twr=meas;
+for i=1:size(meas,1),twr(i,:)=cart2delta(GuessParams,[meas(i,1:2),0]);end
+GuessParams.bed.twr=twr;
 GuessParams.verbose = 0;
 [dErr,nEval,status,err] = SimplexMinimize(...
               @(p) deltaGuessErr(p,GuessParams),...
@@ -45,7 +48,8 @@ deltaErr = dErr(1);
 towerErr =-dErr(2:4);
 
 % plot delta parameter fit
-errZ = deltaErrZ(dErr,GuessParams);
+%errZ = deltaErrZ(dErr,GuessParams);
+errZ = deltaErrZ([dErr(2:4),dErr(1)+[0 0 0],0],GuessParams);
 plot3(meas(:,1),meas(:,2),(errZ+meas(:,3)),'r.');
 #legend('Parabolic Fit to measurements','Measured','Delta Fit Points');
 xlabel('X(mm)');ylabel('Y(mm)');zlabel('mm');
@@ -75,22 +79,23 @@ end
 
 % Error metric for minimization
 function err = deltaGuessErr(p,DP)
-err = deltaErrZ(p,DP);
+err = deltaErrZ([p(2:4),p(1)+[0 0 0],0],DP);
 err = mean(err .* err);
 disp(sqrt(err))
 end
 
+% use standard, "complete" parameter vector version of deltaErrZ
 % retrieve whole error vector
-function errZ = deltaErrZ(p,GP)
-DP = struct('RodLen',GP.RodLen,...
-            'RADIUS',GP.RADIUS+p(1));
-err = 0;
-n = size(GP.meas,1);
-errZ = zeros(n,1);
-for i=1:n
-  d0 = cart2delta(GP,GP.meas(i,1),GP.meas(i,2),0);
-  de = d0 + p(2:4);  % delta positions with position offset error
-  dz = delta2cart(DP,de(1),de(2),de(3));
-  errZ(i) = dz(3) - GP.meas(i,3);
-end
-end
+%function errZ = deltaErrZ(p,GP)
+%DP = struct('RodLen',GP.RodLen,...
+%            'RADIUS',GP.RADIUS+p(1));
+%err = 0;
+%n = size(GP.meas,1);
+%errZ = zeros(n,1);
+%for i=1:n
+%  d0 = cart2delta(GP,[GP.meas(i,1),GP.meas(i,2),0]);
+%  de = d0 + p(2:4);  % delta positions with position offset error
+%  dz = delta2cart(DP,de);
+%  errZ(i) = dz(3) - GP.meas(i,3);
+%end
+%end
