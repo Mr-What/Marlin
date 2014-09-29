@@ -32,16 +32,21 @@ title('Parabolic fit to measurements, + is measurements, . are fit points');
 pause(0.1); % forces plot to display, so we can review it while computing
 
 GuessParams = DP;
-GuessParams.meas = meas;
+GuessParams.bed.xyz = meas;
+twr=meas;
+for i=1:size(meas,1),twr(i,:)=cart2delta(GuessParams,[meas(i,1:2),0]);end
+GuessParams.bed.twr=twr;
+
 GuessParams.verbose = 0;
 [dErr,nEval,status,err] = SimplexMinimize(...
               @(p) deltaGuessErr(p,GuessParams),...
-   	      [0 0 0 0 0 0], 0.1+[0 0 0 0 0 0], 0.005+[0 0 0 0 0 0], 300)
+   	      [0 0 0 0 0 0], 0.1+[0 0 0 0 0 0], 0.005+[0 0 0 0 0 0], 999)
 radiusErr =-dErr(1:3);
 towerErr  =-dErr(4:6);
 
 % plot delta parameter fit
-errZ = deltaErrZ(dErr,GuessParams);
+%errZ = deltaErrZ(dErr,GuessParams);
+errZ = deltaErrZ([dErr(4:6),dErr(1:3),0],GuessParams);
 plot3(meas(:,1),meas(:,2),(errZ+meas(:,3)),'r.');
 #legend('Parabolic Fit to measurements','Measured','Delta Fit Points');
 xlabel('X(mm)');ylabel('Y(mm)');zlabel('mm');
@@ -71,22 +76,23 @@ end
 
 % Error metric for minimization
 function err = deltaGuessErr(p,DP)
-err = deltaErrZ(p,DP);
+%err = deltaErrZ(p,DP);
+err = deltaErrZ([p(4:6),p(1:3),0],DP);
 err = mean(err .* err);
 disp(sqrt(err))
 end
 
-% retrieve whole error vector
-function errZ = deltaErrZ(p,GP)
-DP = struct('RodLen',GP.RodLen,...
-            'radius',GP.radius+p(1:3));
-err = 0;
-n = size(GP.meas,1);
-errZ = zeros(n,1);
-for i=1:n
-  d0 = cart2delta(GP,GP.meas(i,1),GP.meas(i,2),0);
-  de = d0 + p(4:6);  % delta positions with position offset error
-  dz = delta2cart(DP,de(1),de(2),de(3));
-  errZ(i) = dz(3) - GP.meas(i,3);
-end
-end
+%% retrieve whole error vector
+%function errZ = deltaErrZ(p,GP)
+%DP = struct('RodLen',GP.RodLen,...
+%            'radius',GP.radius+p(1:3));
+%err = 0;
+%n = size(GP.meas,1);
+%errZ = zeros(n,1);
+%for i=1:n
+%  d0 = cart2delta(GP,[GP.meas(i,1),GP.meas(i,2),0]);
+%  de = d0 + p(4:6);  % delta positions with position offset error
+%  dz = delta2cart(DP,[de(1),de(2),de(3)]);
+%  errZ(i) = dz(3) - GP.meas(i,3);
+%end
+%end
