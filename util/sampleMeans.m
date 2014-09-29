@@ -1,6 +1,8 @@
 % replace repeated samples at same XY location by their mean
 function a = sampleMeans(b)
-  [hash,idx] = sort(b(:,2)*100 + b(:,1));
+  bx = round(b(:,1)*100);  % prevent hash mis-matches from round-off
+  by = round(b(:,2)*100);
+  [hash,idx] = sort(by*100 + bx);
   a=b;
   m=0;n=0;pos=[0,0];
   hashPrev = -9e9;
