@@ -9,10 +9,9 @@
 %   - print spread
 % most likely to have produced these measurements are returned
 %
-%
 %      deltaCalXYZ(rodLen,radii,xyPointsFile,xyPairsFile,xyMeasFile,bedMeas)
 %
-% RETURN:  values to SUBTRACT from :
+% RETURN:  values to add to :
 %             towerZErr -- endstop offsets
 %             radiusErr -- DELTA_RADIUS1,2,3 settings
 %             diagErr   -- diagonal rod length (RodLen)
@@ -29,8 +28,8 @@ DP.XYcal = loadXYcalDef(DP,xyPointsFile,xyPairsFile);
 DP.meas  = loadXYcalMeas(DP.XYcal,xyMeasFile);
 DP.bed.xyz = bedMeas;
 n=size(DP.bed.xyz,1);
-DP.bed.twr = zeros(n,3);
-for i=1:n, DP.bed.twr(i,:) = cart2delta(DP,[DP.bed.xyz(i,1:2),0]); end
+DP.bed.twr = zeros(n,3); % compute tower commands which touched bed
+for i=1:n, DP.bed.twr(i,:) = cart2delta(DP,DP.bed.xyz(i,:)); end
 
 [towerZErr, radiusErr, diagErr, spread] = guessDeltaErrXYZ(DP)
 end

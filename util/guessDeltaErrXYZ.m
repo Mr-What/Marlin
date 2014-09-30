@@ -44,9 +44,9 @@ pause(0.1); % forces plot to display, so we can review it while computing
               [0 0 0 0 0 0 0 0.1], ... % seed
 	      [1 1 1 1 1 1 1 0.3]*0.1, ... % initial step
 	      [1 1 1 1 1 1 1 0.5]*0.005, 999) % close enough, max iterations
-towerZErr =-dErr(1:3);
-radiusErr =-dErr(4:6);
-diagErr   =-dErr(7);
+towerZErr = dErr(1:3);
+radiusErr = dErr(4:6);
+diagErr   = dErr(7);
 spread    = dErr(8);
 
 % plot delta parameter fit

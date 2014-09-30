@@ -33,9 +33,9 @@ function errZ = deltaErrZ(p,GP)
   n = size(GP.bed.twr,1);
   errZ = zeros(n,1);
   for i=1:n
-    t = GP.bed.twr(i,:); % commanded tower positions
+    t = GP.bed.twr(i,:); % commanded tower positions at bed
     t = t + p(1:3);  % delta tower positions with endstop offset error
     dz = delta2cart(DP,t);
-    errZ(i) = dz(3) - GP.bed.xyz(i,3);
+    errZ(i) = dz(3); % dist from bed, assuming guess delta parameters
   end
 end

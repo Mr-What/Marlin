@@ -18,7 +18,7 @@
 %   p -- error vector:
 %        (1:3) -- tower offset error 
 %        (4:6) -- tower radius error
-%        (7)   -- delta rod-length
+%        (7)   -- delta rod-length error
 %        (8)   -- print spread
 %
 % Guess Parameters struct (GP) must contain:
