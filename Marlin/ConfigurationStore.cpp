@@ -37,7 +37,7 @@ void _EEPROM_readData(int &pos, uint8_t* value, uint8_t size)
 // the default values are used whenever there is a change to the data, to prevent
 // wrong data being written to the variables.
 // ALSO:  always make sure the variables in the Store and retrieve sections are in the same order.
-#define EEPROM_VERSION "V10"
+#define EEPROM_VERSION "V11"
 
 #ifdef EEPROM_SETTINGS
 void Config_StoreSettings() 
@@ -58,7 +58,7 @@ void Config_StoreSettings()
   EEPROM_WRITE_VAR(i,max_e_jerk);
   EEPROM_WRITE_VAR(i,add_homeing);
   #ifdef DELTA
-  EEPROM_WRITE_VAR(i,endstop_adj);
+  EEPROM_WRITE_VAR(i,Delta.endstop_adj);
   #endif
   #ifndef ULTIPANEL
   int plaPreheatHotendTemp = PLA_PREHEAT_HOTEND_TEMP, plaPreheatHPBTemp = PLA_PREHEAT_HPB_TEMP, plaPreheatFanSpeed = PLA_PREHEAT_FAN_SPEED;
@@ -86,6 +86,14 @@ void Config_StoreSettings()
     int lcd_contrast = 32;
   #endif
   EEPROM_WRITE_VAR(i,lcd_contrast);
+
+  #ifdef DELTA
+    EEPROM_WRITE_VAR(i,Delta.radius);
+    EEPROM_WRITE_VAR(i,Delta.diagRodLen);
+    EEPROM_WRITE_VAR(i,Delta.radius);
+    EEPROM_WRITE_VAR(i,Delta.tramPoly);
+  #endif
+
   char ver2[4]=EEPROM_VERSION;
   i=EEPROM_OFFSET;
   EEPROM_WRITE_VAR(i,ver2); // validate data
@@ -151,11 +159,27 @@ void Config_PrintSettings()
     SERIAL_ECHOLN("");
 #ifdef DELTA
     SERIAL_ECHO_START;
-    SERIAL_ECHOLNPGM("Endstop adjustement (mm):");
+    SERIAL_ECHOLNPGM("Endstop adjustement, Tower Radius, Diag rod len (mm):");
     SERIAL_ECHO_START;
-    SERIAL_ECHOPAIR("  M666 X",endstop_adj[0] );
-    SERIAL_ECHOPAIR(" Y" ,endstop_adj[1] );
-    SERIAL_ECHOPAIR(" Z" ,endstop_adj[2] );
+    SERIAL_ECHOPAIR("  M666 X",Delta.endstop_adj[0] );
+    SERIAL_ECHOPAIR(" Y" ,Delta.endstop_adj[1] );
+    SERIAL_ECHOPAIR(" Z" ,Delta.endstop_adj[2] );
+    SERIAL_ECHOPAIR("   A",Delta.radius[0]);
+    SERIAL_ECHOPAIR(" B",Delta.radius[1]);
+    SERIAL_ECHOPAIR(" C",Delta.radius[2]);
+    SERIAL_ECHOPAIR("   D",Delta.diagRodLen);
+    SERIAL_ECHOLN("");
+    SERIAL_ECHO_START;
+    SERIAL_ECHOLNPGM("Bed tram compensation polynomial :");
+    SERIAL_ECHO_START;
+    // can use current ECHO methods.  they don't provide for longer numbers
+    // or formatting.  need to add something...  but how?
+    SERIAL_ECHOPGM("  M668 A");  MYSERIAL.print(Delta.tramPoly.A,3);
+    SERIAL_ECHOPGM(" B"); MYSERIAL.print(Delta.tramPoly.B,5);
+    SERIAL_ECHOPGM(" C"); MYSERIAL.print(Delta.tramPoly.C,5);
+    SERIAL_ECHOPGM(" D"); MYSERIAL.print(Delta.tramPoly.D,7);
+    SERIAL_ECHOPGM(" E"); MYSERIAL.print(Delta.tramPoly.E,7);
+    SERIAL_ECHOPGM(" F"); MYSERIAL.print(Delta.tramPoly.F,7);
     SERIAL_ECHOLN("");
 #endif
 #ifdef PIDTEMP
@@ -199,7 +223,7 @@ void Config_RetrieveSettings()
         EEPROM_READ_VAR(i,max_e_jerk);
         EEPROM_READ_VAR(i,add_homeing);
         #ifdef DELTA
-        EEPROM_READ_VAR(i,endstop_adj);
+        EEPROM_READ_VAR(i,Delta.endstop_adj);
         #endif
         #ifndef ULTIPANEL
         int plaPreheatHotendTemp, plaPreheatHPBTemp, plaPreheatFanSpeed;
@@ -224,6 +248,13 @@ void Config_RetrieveSettings()
         #endif
         EEPROM_READ_VAR(i,lcd_contrast);
 
+        #ifdef DELTA
+        EEPROM_READ_VAR(i,Delta.radius);
+        EEPROM_READ_VAR(i,Delta.diagRodLen);
+        EEPROM_READ_VAR(i,Delta.radius);
+        EEPROM_READ_VAR(i,Delta.tramPoly);
+        #endif
+
 		// Call updatePID (similar to when we have processed M301)
 		updatePID();
         SERIAL_ECHO_START;
@@ -236,6 +267,8 @@ void Config_RetrieveSettings()
     #ifdef EEPROM_CHITCHAT
       Config_PrintSettings();
     #endif
+
+    Config_UpdateDependentSettings();
 }
 #endif
 
@@ -264,8 +297,13 @@ void Config_ResetDefault()
     max_e_jerk=DEFAULT_EJERK;
     add_homeing[0] = add_homeing[1] = add_homeing[2] = 0;
 #ifdef DELTA
-    endstop_adj[0] = endstop_adj[1] = endstop_adj[2] = 0;
+    Delta.endstop_adj[0] = Delta.endstop_adj[1] = Delta.endstop_adj[2] = 0;
+    Delta.diagRodLen = DELTA_DIAGONAL_ROD;
+    Delta.radius[0] = Delta.radius[1] = Delta.radius[2] = DELTA_RADIUS;
+    Delta.tramPoly.A = Delta.tramPoly.B = Delta.tramPoly.C =
+      Delta.tramPoly.D=Delta.tramPoly.E = Delta.tramPoly.F = 0;
 #endif
+
 #ifdef ULTIPANEL
     plaPreheatHotendTemp = PLA_PREHEAT_HOTEND_TEMP;
     plaPreheatHPBTemp = PLA_PREHEAT_HPB_TEMP;
@@ -295,5 +333,35 @@ void Config_ResetDefault()
 
 SERIAL_ECHO_START;
 SERIAL_ECHOLNPGM("Hardcoded Default Settings Loaded");
-
+ Config_UpdateDependentSettings();
 }
+
+#define SIN_60 0.8660254037844386
+#define COS_60 0.5
+
+// Whenever any settings are altered, call this to make sure that
+// any pre-computed dependent quantities, derived from settings
+// are updated.
+void Config_UpdateDependentSettings()
+{
+#ifdef DELTA
+  Delta.diagRodLen2 = Delta.diagRodLen * Delta.diagRodLen;
+  Delta.tramDisabled = ( (Delta.tramPoly.A == 0) &&
+			 (Delta.tramPoly.B == 0) &&
+			 (Delta.tramPoly.C == 0) &&
+			 (Delta.tramPoly.D == 0) &&
+			 (Delta.tramPoly.E == 0) &&
+			 (Delta.tramPoly.F == 0) );
+  Delta.t1x = -SIN_60*Delta.radius[0]; // front left tower
+  Delta.t1y = -COS_60*Delta.radius[0];
+  Delta.t2x =  SIN_60*Delta.radius[1]; // front right tower
+  Delta.t2y = -COS_60*Delta.radius[1];
+  //Delta.t3x = 0; // back middle tower
+  Delta.t3y = Delta.radius[2];
+  //SERIAL_ECHOLNPGM("Tower Locations:");
+  //SERIAL_ECHO(Delta.t1x); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t1y);
+  //SERIAL_ECHO(Delta.t2x); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t2y);
+  //SERIAL_ECHO(        0); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t3y);  
+#endif
+}
+

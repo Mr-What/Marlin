@@ -14,6 +14,7 @@ FORCE_INLINE void Config_PrintSettings() {}
 #ifdef EEPROM_SETTINGS
 void Config_StoreSettings();
 void Config_RetrieveSettings();
+void Config_UpdateDependentSettings();  // re-compute settings derived from main settings
 #else
 FORCE_INLINE void Config_StoreSettings() {}
 FORCE_INLINE void Config_RetrieveSettings() { Config_ResetDefault(); Config_PrintSettings(); }

@@ -541,7 +541,10 @@ void plan_buffer_line(const float &x, const float &y, const float &z, const floa
   }
 
 #ifdef ENABLE_AUTO_BED_LEVELING
+#ifndef DELTA_TRAM_COMPENSATION
+#error delta tram comp. should skip this
   apply_rotation_xyz(plan_bed_level_matrix, x, y, z);
+#endif
 #endif // ENABLE_AUTO_BED_LEVELING
 
   // The target position of the tool in absolute steps
@@ -938,6 +941,8 @@ block->steps_y = labs((target[X_AXIS]-position[X_AXIS]) - (target[Y_AXIS]-positi
 }
 
 #ifdef ENABLE_AUTO_BED_LEVELING
+#ifndef DELTA_TRAM_COMPENSATION
+#error delta tram comp. should skip this
 vector_3 plan_get_position() {
 	vector_3 position = vector_3(st_get_position_mm(X_AXIS), st_get_position_mm(Y_AXIS), st_get_position_mm(Z_AXIS));
 
@@ -950,12 +955,16 @@ vector_3 plan_get_position() {
 
 	return position;
 }
+#endif
 #endif // ENABLE_AUTO_BED_LEVELING
 
 #ifdef ENABLE_AUTO_BED_LEVELING
 void plan_set_position(float x, float y, float z, const float &e)
 {
+#ifndef DELTA_TRAM_COMPENSATION
+#error delta tram should skip this rotation
   apply_rotation_xyz(plan_bed_level_matrix, x, y, z);
+#endif
 #else
 void plan_set_position(const float &x, const float &y, const float &z, const float &e)
 {

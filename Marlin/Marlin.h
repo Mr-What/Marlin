@@ -177,7 +177,23 @@ void get_coordinates();
 #ifdef DELTA
 void calculate_delta(float cartesian[3]);
 void adjust_delta(float cartesian[3]);
-extern float delta[3];
+typedef struct DeltaParams_s {
+  float delta[3];  // delta power positions
+  float endstop_adj[3];
+  float diagRodLen;
+  float radius[3];
+  #ifdef DELTA_TRAM_COMPENSATION
+  struct { // bed tramming compensation polynomial
+    float A,B,C,D,E,F;
+  } tramPoly;
+  // dependent variables:
+  bool tramDisabled;
+  #endif
+  float diagRodLen2;
+  float t1x, t1y, t2x, t2y, t3y; // tower axis positions  (t3x==0)
+} DeltaParams;
+extern DeltaParams Delta;
+//extern float delta[3];
 #endif
 void prepare_move_raw();
 void prepare_move();
@@ -209,9 +225,9 @@ extern int extrudemultiply; // Sets extrude multiply factor (in percent)
 extern float volumetric_multiplier[EXTRUDERS]; // reciprocal of cross-sectional area of filament (in square millimeters), stored this way to reduce computational burden in planner
 extern float current_position[NUM_AXIS] ;
 extern float add_homeing[3];
-#ifdef DELTA
-extern float endstop_adj[3];
-#endif
+//#ifdef DELTA
+//extern float endstop_adj[3];
+//#endif
 extern float min_pos[3];
 extern float max_pos[3];
 extern bool axis_known_position[3];
@@ -245,3 +261,4 @@ extern void digipot_i2c_init();
 #endif
 
 #endif
+

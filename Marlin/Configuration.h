@@ -5,7 +5,7 @@
 // Advanced settings can be found in Configuration_adv.h
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
-// --------- Commonly altered calibration settings (ab)
+// --------- Commonly altered delta calibration settings (ab)
 // set this to slightly less than actual max dist from bed, so that
 // we can use endstop-adjustments to fine-tune.
 #define MANUAL_Z_HOME_POS 235
@@ -13,9 +13,15 @@
 // Radius from center of bed to ?vert tower?
 // Decreasing this number makes Z=const surface more  bowl-shaped (center  lower than edges)
 // Increasing this number makes Z=const surface more igloo-shaped (center higher than edges)
-#define DELTA_RADIUS 108.1
+#define DELTA_RADIUS 109.5 //109.4 //108.07 original build, before initial Frog Carriage
+//#define DELTA_RADIUS1 111.083//109.5//109.15
+//#define DELTA_RADIUS2 108.321//110.18
+//#define DELTA_RADIUS3 109.337//109.10
+#define DELTA_DIAGONAL_ROD 218.233//217.95 // mm
 
-#define Z_PROBE_OFFSET_FROM_EXTRUDER -6.88
+#define X_PROBE_OFFSET_FROM_EXTRUDER   0//-4
+#define Y_PROBE_OFFSET_FROM_EXTRUDER   0//7
+#define Z_PROBE_OFFSET_FROM_EXTRUDER -11.582
 
 
 //===========================================================================
@@ -119,7 +125,8 @@
 #define DELTA_SEGMENTS_PER_SECOND 160
 
 // Center-to-center distance of the holes in the diagonal push rods.
-#define DELTA_DIAGONAL_ROD 217.95 // mm
+// ** move to top.  changes frequently
+//#define DELTA_DIAGONAL_ROD 217.95 // mm
 
 // Horizontal offset from middle of printer to smooth rod center.
 //#define DELTA_SMOOTH_ROD_OFFSET 107 //128.0 // mm
@@ -139,16 +146,16 @@
 // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
 #define DELTA_PRINTABLE_RADIUS 75.0
 
-// Effective X/Y positions of the three vertical towers.
-#define SIN_60 0.8660254037844386
-#define COS_60 0.5
-// on my current build Tower1 carriage is a bit thinner than others
-#define DELTA_TOWER1_X -SIN_60*(DELTA_RADIUS+.6) // front left tower
-#define DELTA_TOWER1_Y -COS_60*(DELTA_RADIUS+.6)
-#define DELTA_TOWER2_X SIN_60*DELTA_RADIUS // front right tower
-#define DELTA_TOWER2_Y -COS_60*DELTA_RADIUS
-#define DELTA_TOWER3_X 0.0 // back middle tower
-#define DELTA_TOWER3_Y DELTA_RADIUS
+//// Effective X/Y positions of the three vertical towers.
+//#define SIN_60 0.8660254037844386
+//#define COS_60 0.5
+//// on my current build Tower1 carriage is a bit thinner than others
+//#define DELTA_TOWER1_X -SIN_60*DELTA_RADIUS1 // front left tower
+//#define DELTA_TOWER1_Y -COS_60*DELTA_RADIUS1
+//#define DELTA_TOWER2_X SIN_60*DELTA_RADIUS2 // front right tower
+//#define DELTA_TOWER2_Y -COS_60*DELTA_RADIUS2
+//#define DELTA_TOWER3_X 0.0 // back middle tower
+//#define DELTA_TOWER3_Y DELTA_RADIUS3
 
 // If the DELTA_RADIUS is the linkage radius MINUS EFFECTOR_OFFSET, we don't need this!
 //#define EFFECTOR_OFFSET1_X -SIN_60*DELTA_EFFECTOR_OFFSET // toward front left tower
@@ -159,7 +166,7 @@
 //#define EFFECTOR_OFFSET3_Y         DELTA_EFFECTOR_OFFSET
 
 // Diagonal rod squared
-#define DELTA_DIAGONAL_ROD_2 (DELTA_DIAGONAL_ROD*DELTA_DIAGONAL_ROD)
+//#define DELTA_DIAGONAL_ROD_2 (DELTA_DIAGONAL_ROD*DELTA_DIAGONAL_ROD)
 
 //===========================================================================
 //=============================Thermal Settings  ============================
@@ -345,7 +352,7 @@
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 const bool X_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Y_MIN_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
-const bool Z_MIN_ENDSTOP_INVERTING = false;//true; // set to true to invert the logic of the endstop.
+const bool Z_MIN_ENDSTOP_INVERTING = true;//false;//true; // set to true to invert the logic of the endstop.
 const bool X_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Y_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
 const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic of the endstop.
@@ -401,6 +408,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define ENABLE_AUTO_BED_LEVELING // Delete the comment to enable (remove // at the start of the line)
 
 #ifdef ENABLE_AUTO_BED_LEVELING
+  #define DELTA_TRAM_COMPENSATION  // define this for bed-leveling polynomial
 
   // these are the positions on the bed to do the probing
   #define DELTA_PROBABLE_RADIUS (DELTA_PRINTABLE_RADIUS-15)
@@ -410,8 +418,9 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
   #define FRONT_PROBE_BED_POSITION -DELTA_PROBABLE_RADIUS
 
   // these are the offsets to the probe relative to the extruder tip (Hotend - Probe)
-  #define X_PROBE_OFFSET_FROM_EXTRUDER 3.3//-1.0
-  #define Y_PROBE_OFFSET_FROM_EXTRUDER 15 //21.0
+  // Probe-Tip is (-4,7) for switch screwed into hot-end
+  //#define X_PROBE_OFFSET_FROM_EXTRUDER -4  //-17//-1.0
+  //#define Y_PROBE_OFFSET_FROM_EXTRUDER  7 //9.6 //21.0
   // moved this to top of file since it gets re-set a lot in calibration...
   //  until I can figure out how to tweak it in the eeprom (ab)
   //#define Z_PROBE_OFFSET_FROM_EXTRUDER -6
@@ -435,7 +444,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 //If you have enabled the Bed Auto Leveling and are using the same Z Probe for Z Homing,
 //it is highly recommended you let this Z_SAFE_HOMING enabled!!!
 
-  #define Z_SAFE_HOMING   // This feature is meant to avoid Z homing with probe outside the bed area.
+  //#define Z_SAFE_HOMING   // This feature is meant to avoid Z homing with probe outside the bed area.
                           // When defined, it will:
                           // - Allow Z homing only after X and Y homing AND stepper drivers still enabled
                           // - If stepper drivers timeout, it will need X and Y homing again before Z homing
@@ -451,7 +460,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 
   // with accurate bed leveling, the bed is sampled in a ACCURATE_BED_LEVELING_POINTSxACCURATE_BED_LEVELING_POINTS grid and least squares solution is calculated
   // Note: this feature occupies 10'206 byte
-  #define ACCURATE_BED_LEVELING
+  //#define ACCURATE_BED_LEVELING
 
   #ifdef ACCURATE_BED_LEVELING
     #define ACCURATE_BED_LEVELING_POINTS 7
@@ -464,9 +473,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
     // Works best with ACCURATE_BED_LEVELING_POINTS 5 or higher.
     #define NONLINEAR_BED_LEVELING
   #endif
-
 #endif
-
 
 // The position of the homing switches
 #define MANUAL_HOME_POSITIONS  // If defined, MANUAL_*_HOME_POS below will be used
@@ -491,7 +498,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 #define XYZ_STEPS (XYZ_FULL_STEPS_PER_ROTATION * XYZ_MICROSTEPS / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
 
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 100}
-#define DEFAULT_MAX_FEEDRATE          {200, 200, 200, 200}    // (mm/sec)
+#define DEFAULT_MAX_FEEDRATE          {600, 600, 600, 200}    // (mm/sec)
 #define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          3000    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
@@ -506,7 +513,7 @@ const bool Z_MAX_ENDSTOP_INVERTING = false; // set to true to invert the logic o
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                20.0    // (mm/sec)
 #define DEFAULT_ZJERK                 20.0    // (mm/sec)
-#define DEFAULT_EJERK                 20.0    // (mm/sec)
+#define DEFAULT_EJERK                  5.0    // (mm/sec)
 
 //===========================================================================
 //=============================Additional Features===========================
