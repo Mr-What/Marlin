@@ -16,7 +16,7 @@ for (local $i=0; $i <= $#CalPair; $i++) {
     local $dx = $a[0]-$b[0];
     local $dy = $a[1]-$b[1];
     local $d = sqrt($dx*$dx + $dy*$dy);
-    printf "$na $nb %7.3f\n",$d;
+    printf "$na $nb %g\n",0.01*int($d*100+0.5);
 }
     
 sub loadCalPoints() {

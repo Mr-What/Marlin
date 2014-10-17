@@ -23,6 +23,9 @@ D5 D6 i
 E3 E4
 E1 E2
 E1 I3
+F1 F2 i
+F1 F4 i
+F3 F4 i
 G1 H1
 G2 H2
 G3 H3
@@ -41,3 +44,7 @@ N1 N2 i
 N3 N4 i
 O1 O2
 O3 O4
+P1 P2
+P3 P5
+P4 P6
+
