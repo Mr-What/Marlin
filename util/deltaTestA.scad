@@ -3,6 +3,10 @@ union() {
   for (a=[0,120,240]) rotate([0,0,a]) {
     // tip 39+62/2 = 70 mm from exact center
     translate([0, 39,0]) cube([8,62,4],center=true);
+    hull() {  // support brace
+      translate([0,25,1]) scale([1,15,1]) cylinder(r1=1.5,r2=.3,h=3,$fn=6);
+      translate([0,63,1])                 cylinder(r1=1.5,r2=.3,h=3,$fn=6);
+    }
     // outer edge aligned with center of tip of bar towards tower,
     // exactly 35mm from center
     translate([0,-32,0]) {
@@ -13,19 +17,16 @@ union() {
 
     // more stuff to test Z scale
     // corners exactly 60 from center, on outside, 5mm above rest.
-    translate([0,60-4/cos(30),0]) rotate([0,0,30]) cylinder(r=4/cos(30),h=2+5,$fn=6);
+    translate([0,65,0]) rotate([0,0,30]) cylinder(r=4/cos(30),h=2+5,$fn=6);
   }
-  // lowest (-Y) extent : tip center at -70/2=35, but 8mm wide bar extends another 4*cos(30)
-  // Low Y point: 38.464
-  // hi Y point, 70.
-  // If slic3r tries to center this, it will shift things by 15.768,
-  // so when slicing, put plot center at (0,15.768) to force object center
-  // to be printbed center.
-  echo("centroid 15.768mm below center of Y-axis extent");
 
   // more XY-square parts to test straight lines/squareness
   for(a=[-1,1]) {
     translate([52*a, 10  ,0]) cube([ 6,60,4],center=true);
+    translate([52*a,  0  ,1]) hull() { // support brace
+      translate([0,27,0]) scale([1,9,1]) cylinder(r1=1.5,r2=.3,h=3,$fn=6);
+      translate([0,-7,0]) scale([1,9,1]) cylinder(r1=1.5,r2=.3,h=3,$fn=6);
+    }
     translate([43*a,-18  ,0]) cube([16, 4,4],center=true);
     translate([34*a, 37.5,0]) cube([35, 5,4],center=true);
   }
