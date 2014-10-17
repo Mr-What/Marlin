@@ -1,11 +1,12 @@
+//projection(cut=true)  // to make annotated 2D drawing
 union() {
 
   for (a=[0,120,240]) rotate([0,0,a]) {
     // tip 39+62/2 = 70 mm from exact center
     translate([0, 39,0]) cube([8,62,4],center=true);
     hull() {  // support brace
-      translate([0,25,1]) scale([1,15,1]) cylinder(r1=1.5,r2=.3,h=3,$fn=6);
-      translate([0,63,1])                 cylinder(r1=1.5,r2=.3,h=3,$fn=6);
+      translate([0,30,1]) scale([1,15,1]) cylinder(r1=1.5,r2=.2,h=3,$fn=4);
+      translate([0,63,1])                 cylinder(r1=1.5,r2=.2,h=3,$fn=4);
     }
     // outer edge aligned with center of tip of bar towards tower,
     // exactly 35mm from center
@@ -24,11 +25,15 @@ union() {
   for(a=[-1,1]) {
     translate([52*a, 10  ,0]) cube([ 6,60,4],center=true);
     translate([52*a,  0  ,1]) hull() { // support brace
-      translate([0,27,0]) scale([1,9,1]) cylinder(r1=1.5,r2=.3,h=3,$fn=6);
-      translate([0,-7,0]) scale([1,9,1]) cylinder(r1=1.5,r2=.3,h=3,$fn=6);
+      translate([0,37,0]) cylinder(r1=1.5,r2=.2,h=3,$fn=4);
+      translate([0,-7,0]) scale([1,9,1]) cylinder(r1=1.5,r2=.2,h=3,$fn=4);
     }
     translate([43*a,-18  ,0]) cube([16, 4,4],center=true);
     translate([34*a, 37.5,0]) cube([35, 5,4],center=true);
+  }
+  translate([ 0  , 37  ,1]) hull() { // more braces
+    for (a=[-1,1]) translate([ 52*a,0,0])
+      cylinder(r1=1.5,r2=.3,h=3,$fn=4);
   }
 
   difference() {
@@ -41,14 +46,15 @@ union() {
   translate([0,5+4,12/2]) cube([8,8,12],center=true);
 
   // This little post ensures that slic3r puts drawing centered correctly,
-  // without manual 15.768 mm offset mentioned above.
+  // without manual 15.768 mm offset.
   // I also had problems with re-melt when printing one tall spire.
   // this will force the head to move on each layer and give things more time
   // to cool
   translate([0,-70+4,5]) cube([8,8,14],center=true);
-  for(a=[-1,1]) translate([10*a,-50,1])
-    rotate([0,0,-a*30]) cube([2,40,6],center=true);
-
+  for(a=[-1,1]) hull() {
+    translate([22*a,-31,-2]) cylinder(r1=1.5,r2=.2,h=4.5,$fn=4);
+    translate([  0 ,-68,-2]) cylinder(r1=1.5,r2=.2,h=9,$fn=6);
+  }
 }
 
 %translate([0,0,-1]) rotate([0,0,30]) cylinder(h=2,r=70,$fn=6);
