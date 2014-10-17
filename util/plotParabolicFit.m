@@ -4,7 +4,7 @@
 %   ax -- axis for fit sample points surface
 %   z  -- parabolic points on this surface
 function [c,ax,z] = plotParabolicFit(meas)
-c = parabolicFit(meas)
+c = parabolicFit(meas);
 % distance from origin of all measurements
 r = sqrt(meas(:,1) .* meas(:,1) + meas(:,2) .* meas(:,2));
 r5 = floor(max(r)/5)*5+5;  % r, rounded up to to neareast 5mm
@@ -21,6 +21,10 @@ for i=1:n
    end
 end
 meshc(ax,ax,z);
+desc = sprintf('M668 A%.4f B%.6f C%.6f D%.8f E%.8f F%.8f',c);
+xlabel X;ylabel Y
+title(desc);
+disp(desc)
 end
 
 function c = parabolicFit(meas)
