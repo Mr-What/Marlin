@@ -17,7 +17,7 @@
 %                   (kind of a radius - effector_offset)
 %       RodLen   -- length between center of pivots on diagonal rods
 %
-% RETURN:  values to SUBTRACT from DELTA_RADIUS and tower offset(M666 X Y Z)
+% RETURN:  values to ADD to DELTA_RADIUS and tower offset(M666 X Y Z)
 %          settings to calibrate print bed
 function [deltaErr, towerErr] = guessDeltaErr4(DP,meas)
 
@@ -83,19 +83,3 @@ err = deltaErrZ([p(2:4),p(1)+[0 0 0],0],DP);
 err = mean(err .* err);
 disp(sqrt(err))
 end
-
-% use standard, "complete" parameter vector version of deltaErrZ
-% retrieve whole error vector
-%function errZ = deltaErrZ(p,GP)
-%DP = struct('RodLen',GP.RodLen,...
-%            'RADIUS',GP.RADIUS+p(1));
-%err = 0;
-%n = size(GP.meas,1);
-%errZ = zeros(n,1);
-%for i=1:n
-%  d0 = cart2delta(GP,[GP.meas(i,1),GP.meas(i,2),0]);
-%  de = d0 + p(2:4);  % delta positions with position offset error
-%  dz = delta2cart(DP,de);
-%  errZ(i) = dz(3) - GP.meas(i,3);
-%end
-%end
