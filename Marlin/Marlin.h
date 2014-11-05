@@ -175,25 +175,7 @@ void ClearToSend();
 
 void get_coordinates();
 #ifdef DELTA
-void calculate_delta(float cartesian[3]);
-void adjust_delta(float cartesian[3]);
-typedef struct DeltaParams_s {
-  float delta[3];  // delta power positions
-  float endstop_adj[3];
-  float diagRodLen;
-  float radius[3];
-  #ifdef DELTA_TRAM_COMPENSATION
-  struct { // bed tramming compensation polynomial
-    float A,B,C,D,E,F;
-  } tramPoly;
-  // dependent variables:
-  bool tramDisabled;
-  #endif
-  float diagRodLen2;
-  float t1x, t1y, t2x, t2y, t3y; // tower axis positions  (t3x==0)
-} DeltaParams;
-extern DeltaParams Delta;
-//extern float delta[3];
+#include "delta.h"
 #endif
 void prepare_move_raw();
 void prepare_move();
