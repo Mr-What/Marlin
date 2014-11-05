@@ -179,7 +179,19 @@ void Config_PrintSettings()
     SERIAL_ECHOPGM(" C"); MYSERIAL.print(Delta.tramPoly.C,5);
     SERIAL_ECHOPGM(" D"); MYSERIAL.print(Delta.tramPoly.D,7);
     SERIAL_ECHOPGM(" E"); MYSERIAL.print(Delta.tramPoly.E,7);
-    SERIAL_ECHOPGM(" F"); MYSERIAL.print(Delta.tramPoly.F,7);
+    SERIAL_ECHOPGM(" F"); MYSERIAL.print(Delta.tramPoly.F,7);    
+    if (Delta.verbose & 4)
+      {
+        SERIAL_ECHOPGM(" V");  SERIAL_ECHO(Delta.verbose);
+        SERIAL_ECHOLN("");
+        SERIAL_ECHOPAIR("diagRod2=",Delta.diagRodLen2);
+        SERIAL_ECHOPAIR(" tower=[",Delta.t1x);
+        SERIAL_ECHOPAIR(",",Delta.t1y);
+        SERIAL_ECHOPAIR("; ",Delta.t2x);
+        SERIAL_ECHOPAIR(",",Delta.t2y);
+        SERIAL_ECHOPAIR("; 0,",Delta.t3y);
+        SERIAL_ECHOLNPGM("]");
+      }
     SERIAL_ECHOLN("");
 #endif
 #ifdef PIDTEMP
@@ -302,6 +314,7 @@ void Config_ResetDefault()
     Delta.radius[0] = Delta.radius[1] = Delta.radius[2] = DELTA_RADIUS;
     Delta.tramPoly.A = Delta.tramPoly.B = Delta.tramPoly.C =
       Delta.tramPoly.D=Delta.tramPoly.E = Delta.tramPoly.F = 0;
+    Delta.verbose=4;
 #endif
 
 #ifdef ULTIPANEL
@@ -358,10 +371,16 @@ void Config_UpdateDependentSettings()
   Delta.t2y = -COS_60*Delta.radius[1];
   //Delta.t3x = 0; // back middle tower
   Delta.t3y = Delta.radius[2];
-  //SERIAL_ECHOLNPGM("Tower Locations:");
-  //SERIAL_ECHO(Delta.t1x); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t1y);
-  //SERIAL_ECHO(Delta.t2x); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t2y);
-  //SERIAL_ECHO(        0); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t3y);  
+  if (Delta.verbose & 4)
+    {
+      SERIAL_ECHOLNPGM("Tower Locations:");
+      SERIAL_ECHO(Delta.t1x); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t1y);
+      SERIAL_ECHO(Delta.t2x); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t2y);
+      SERIAL_ECHO(        0); SERIAL_ECHO(','); SERIAL_ECHOLN(Delta.t3y);
+      SERIAL_ECHOPGM("tramPoly ");
+      if (Delta.tramDisabled) SERIAL_ECHOLNPGM("disabled");
+      else                    SERIAL_ECHOLNPGM( "enabled");
+    } 
 #endif
 }
 

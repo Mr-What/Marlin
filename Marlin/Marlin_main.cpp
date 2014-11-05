@@ -246,24 +246,22 @@ int EtoPPressure=0;
   #endif
 #endif
 
-#ifdef DELTA
-//float delta[3] = {0.0, 0.0, 0.0};
-DeltaParams Delta;
-#endif
-
 //#ifdef NONLINEAR_BED_LEVELING // puked when attempting linear fit (ab)
 #ifdef ACCURATE_BED_LEVELING
 float bed_level[ACCURATE_BED_LEVELING_POINTS][ACCURATE_BED_LEVELING_POINTS];
 #endif
 
+// accessed in delta.cpp :
+float feedrate = 1500.0; // accessed in delta.cpp
+float destination[NUM_AXIS] = {  0.0, 0.0, 0.0, 0.0};
+
 //===========================================================================
 //=============================private variables=============================
 //===========================================================================
 const char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
-static float destination[NUM_AXIS] = {  0.0, 0.0, 0.0, 0.0};
 static float offset[3] = {0.0, 0.0, 0.0};
 static bool home_all_axis = true;
-static float feedrate = 1500.0, next_feedrate, saved_feedrate;
+static float next_feedrate, saved_feedrate;
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 
 static bool relative_mode = false;  //Determines Absolute or Relative Coordinates
@@ -285,7 +283,7 @@ const int sensitive_pins[] = SENSITIVE_PINS; // Sensitive pin list for M42
 //static float bt = 0;
 
 //Inactivity shutdown variables
-static unsigned long previous_millis_cmd = 0;
+unsigned long previous_millis_cmd = 0;  // accessed in delta.cpp
 static unsigned long max_inactive_time = 0;
 static unsigned long stepper_inactive_time = DEFAULT_STEPPER_DEACTIVE_TIME*1000l;
 
@@ -824,33 +822,8 @@ static void axis_is_at_home(int axis) {
   max_pos[axis] =          base_max_pos(axis) + add_homeing[axis];
 }
 
-#ifdef ENABLE_AUTO_BED_LEVELING
+
 #ifdef ACCURATE_BED_LEVELING
-static void set_bed_level_equation_lsq(double *plane_equation_coefficients)
-{
-    vector_3 planeNormal = vector_3(-plane_equation_coefficients[0], -plane_equation_coefficients[1], 1);
-    planeNormal.debug("planeNormal");
-    plan_bed_level_matrix = matrix_3x3::create_look_at(planeNormal);
-    //bedLevel.debug("bedLevel");
-
-    //plan_bed_level_matrix.debug("bed level before");
-    //vector_3 uncorrected_position = plan_get_position_mm();
-    //uncorrected_position.debug("position before");
-
-    vector_3 corrected_position = plan_get_position();
-//    corrected_position.debug("position after");
-    current_position[X_AXIS] = corrected_position.x;
-    current_position[Y_AXIS] = corrected_position.y;
-    current_position[Z_AXIS] = corrected_position.z;
-
-    // but the bed at 0 so we don't go below it.
-    current_position[Z_AXIS] = zprobe_zoffset; // in the lsq we reach here after raising the extruder due to the loop structure
-
-    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-}
-
-#else
-#ifndef DELTA_TRAM_COMPENSATION
 static void set_bed_level_equation(float z_at_xLeft_yFront, float z_at_xRight_yFront, float z_at_xLeft_yBack) {
     plan_bed_level_matrix.set_to_identity();
 
@@ -885,46 +858,25 @@ static void set_bed_level_equation(float z_at_xLeft_yFront, float z_at_xRight_yF
 
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
 }
-#endif // DELTA_TRAM_COMPENSATION does not use this table
 #endif // ACCURATE_BED_LEVELING
 
+#ifndef DELTA  // DELTA version in delta.cpp
 static void run_z_probe() {
-#ifndef DELTA_TRAM_COMPENSATION
     plan_bed_level_matrix.set_to_identity();
-#endif
 
-#ifdef DELTA
-    enable_endstops(true);
-    //SERIAL_ECHOLNPGM("endstops enabled for z-probe");
-    float start_z = current_position[Z_AXIS];
-    long start_steps = st_get_position(Z_AXIS);
-
-    feedrate = homing_feedrate[Z_AXIS]/20;
-    destination[Z_AXIS] = -3;
-    prepare_move_raw();
-    st_synchronize();
-    endstops_hit_on_purpose();
-
-    enable_endstops(false);
-    long stop_steps = st_get_position(Z_AXIS);
-    //SERIAL_ECHOPGM("start position (steps)? = ");SERIAL_ECHOLN(stop_steps);
-
-    float mm = start_z - float(start_steps - stop_steps) / axis_steps_per_unit[Z_AXIS];
-    current_position[Z_AXIS] = mm;
-    calculate_delta(current_position);
-    //SERIAL_ECHOPGM("Delta start ");
-    plan_set_position(Delta.delta[X_AXIS], Delta.delta[Y_AXIS], Delta.delta[Z_AXIS], current_position[E_AXIS]);
-#else
     feedrate = homing_feedrate[Z_AXIS];
 
     // move down until you find the bed
     float zPosition = -10;
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], zPosition, current_position[E_AXIS], feedrate/60, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], zPositi
+on, current_position[E_AXIS], feedrate/60, active_extruder);
     st_synchronize();
 
-        // we have to let the planner know where we are right now as it is not where we said to go.
+        // we have to let the planner know where we are right now as it is not w
+here we said to go.
     zPosition = st_get_position_mm(Z_AXIS);
-    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], zPosition, current_position[E_AXIS]);
+    plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], zPosit
+ion, current_position[E_AXIS]);
 
     // move up the retract distance
     zPosition += home_retract_mm(Z_AXIS);
@@ -940,14 +892,12 @@ static void run_z_probe() {
     current_position[Z_AXIS] = st_get_position_mm(Z_AXIS);
     // make sure the planner knows where we are as it may be a bit different than we last said to move to
     plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-#endif
 }
+#endif
 
 static void do_blocking_move_to(float x, float y, float z) {
     float oldFeedRate = feedrate;
-
     feedrate = XY_TRAVEL_SPEED;
-
 #ifdef DELTA
     destination[X_AXIS] = x;
     destination[Y_AXIS] = y;
@@ -960,7 +910,6 @@ static void do_blocking_move_to(float x, float y, float z) {
     plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], feedrate/60, active_extruder);
 #endif //DELTA
     st_synchronize();
-
     feedrate = oldFeedRate;
 }
 
@@ -1025,7 +974,7 @@ static void retract_z_probe() {
 #ifndef   RETRACTABLE_Z_PROBE
     st_synchronize();
     return;  // disabale
-#endif
+#else
     // Retract Z Servo endstop if enabled
     #ifdef SERVO_ENDSTOPS
     if (servo_endstops[Z_AXIS] > -1) {
@@ -1065,6 +1014,7 @@ static void retract_z_probe() {
     prepare_move_raw();
     st_synchronize();
     #endif //SERVO_ENDSTOPS
+#endif // RETRACTABLE_Z_PROBE
 }
 
 /// Probe bed height at position (x,y), returns the measured z value
@@ -1095,62 +1045,7 @@ static float probe_pt(float x, float y, float z_before) {
   return measured_z;
 }
 
-#endif // #ifdef ENABLE_AUTO_BED_LEVELING
-
-#ifdef NONLINEAR_BED_LEVELING
-static void extrapolate_one_point(int x, int y, int xdir, int ydir) {
-  if (bed_level[x][y] != 0.0) {
-    return;  // Don't overwrite good values.
-  }
-  float a = 2*bed_level[x+xdir][y] - bed_level[x+xdir*2][y];  // Left to right.
-  float b = 2*bed_level[x][y+ydir] - bed_level[x][y+ydir*2];  // Front to back.
-  float c = 2*bed_level[x+xdir][y+ydir] - bed_level[x+xdir*2][y+ydir*2];  // Diagonal.
-  float median = c;  // Median is robust (ignores outliers).
-  if (a < b) {
-    if (b < c) median = b;
-    if (c < a) median = a;
-  } else {  // b <= a
-    if (c < b) median = b;
-    if (a < c) median = a;
-  }
-  bed_level[x][y] = median;
-}
-
-// Fill in the unprobed points (corners of circular print surface)
-// using linear extrapolation, away from the center.
-static void extrapolate_unprobed_bed_level() {
-  int half = (ACCURATE_BED_LEVELING_POINTS-1)/2;
-  for (int y = 0; y <= half; y++) {
-    for (int x = 0; x <= half; x++) {
-      if (x + y < 3) continue;
-      extrapolate_one_point(half-x, half-y, x>1?+1:0, y>1?+1:0);
-      extrapolate_one_point(half+x, half-y, x>1?-1:0, y>1?+1:0);
-      extrapolate_one_point(half-x, half+y, x>1?+1:0, y>1?-1:0);
-      extrapolate_one_point(half+x, half+y, x>1?-1:0, y>1?-1:0);
-    }
-  }
-}
-
-// Print calibration results for plotting or manual frame adjustment.
-static void print_bed_level() {
-  for (int y = 0; y < ACCURATE_BED_LEVELING_POINTS; y++) {
-    for (int x = 0; x < ACCURATE_BED_LEVELING_POINTS; x++) {
-      SERIAL_PROTOCOL_F(bed_level[x][y], 2);
-      SERIAL_PROTOCOLPGM(" ");
-    }
-    SERIAL_ECHOLN("");
-  }
-}
-
-// Reset calibration results to zero.
-static void reset_bed_level() {
-  for (int y = 0; y < ACCURATE_BED_LEVELING_POINTS; y++) {
-    for (int x = 0; x < ACCURATE_BED_LEVELING_POINTS; x++) {
-      bed_level[x][y] = 0.0;
-    }
-  }
-}
-#endif //NONLINEAR_BED_LEVELING
+//#endif // #ifdef ENABLE_AUTO_BED_LEVELING
 
 static void homeaxis(int axis) {
 #define HOMEAXIS_DO(LETTER) \
@@ -1207,24 +1102,8 @@ static void homeaxis(int axis) {
     plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
     st_synchronize();
 #ifdef DELTA
-    // retrace by the amount specified in endstop_adj
-    if (Delta.endstop_adj[axis] * axis_home_dir < 0) {
-      plan_set_position(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS]);
-      destination[axis] = Delta.endstop_adj[axis];
-MYSERIAL.print("Tower");MYSERIAL.print(axis);MYSERIAL.print("  adjust=");MYSERIAL.println(Delta.endstop_adj[axis]);
-//MYSERIAL.print(destination[X_AXIS]);MYSERIAL.print(' ');
-//MYSERIAL.print(destination[Y_AXIS]);MYSERIAL.print(' ');
-//MYSERIAL.println(destination[Z_AXIS]);
-      plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], feedrate/60, active_extruder);
-delay(1);
-      st_synchronize();
-delay(1);
-      if (axis==2+7) {// trouble with Z tower not adjusting?!?? stays at endstop(ab)
-        MYSERIAL.println("Double-check Z");
-        plan_buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS]-10, destination[E_AXIS], feedrate/60, active_extruder);
-        st_synchronize();
-      }
-    }
+    if (Delta.endstop_adj[axis] * axis_home_dir < 0)
+      retrace_from_endstop(axis);  // back off from endstop by firmware set amount
 #endif
     axis_is_at_home(axis);
     destination[axis] = current_position[axis];
@@ -1740,7 +1619,7 @@ void process_commands()
       relative_mode = true;
       break;
     case 92: // G92
-      if(!code_seen(axis_codes[E_AXIS]))
+      //if(!code_seen(axis_codes[E_AXIS]))
         st_synchronize();
       for(int8_t i=0; i < NUM_AXIS; i++) {
         if(code_seen(axis_codes[i])) {
@@ -1754,6 +1633,7 @@ void process_commands()
            }
         }
       }
+  st_synchronize();
       break;
     }
   }
@@ -2483,6 +2363,7 @@ void process_commands()
         if(code_seen('F')) {Delta.tramPoly.F = code_value(); codeSeen=true;}
         if (!codeSeen) {Delta.tramPoly.A=Delta.tramPoly.B=Delta.tramPoly.C=
           Delta.tramPoly.D=Delta.tramPoly.E=Delta.tramPoly.F=0;}
+        if(code_seen('V')) Delta.verbose=(int)(code_value()+0.5);
       }
       Config_UpdateDependentSettings();
       break;
@@ -3314,199 +3195,13 @@ void clamp_to_software_endstops(float target[3])
   }
 }
 
-#ifdef DELTA
-#if 0  // depricated, old code:
-// compute delta axis positions from desired cartesian position
-void calculate_delta(const float x, const float y, const float z)  // might be slightly faster (ab)
-{
-  float dx, dy;
-  dx = DELTA_TOWER1_X - x;
-  dy = DELTA_TOWER1_Y - y;
-  delta[X_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + z;
-  dx = DELTA_TOWER2_X - x;
-  dy = DELTA_TOWER2_Y - y;
-  delta[Y_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + z;
-  dx = DELTA_TOWER3_X - x;
-  dy = DELTA_TOWER3_Y - y;
-  delta[Z_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + z;
-}
-
-void calculate_delta(float cartesian[3])
-{
-#if 0
-  // This code assumes that DELTA_RADIUS was set to the XY projected distance between
-  // diagonal rod ends, when the effector head was placed in the center of the bed.
-  //    DELTA_RADIUS is ised to compute DELTA_TOWER?_X/Y
-  float dx, dy;
-  dx = DELTA_TOWER1_X - EFFECTOR_OFFSET1_X - cartesian[X_AXIS];
-  dy = DELTA_TOWER1_Y - EFFECTOR_OFFSET1_Y - cartesian[Y_AXIS];
-  delta[X_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + cartesian[Z_AXIS];
-  dx = DELTA_TOWER2_X - EFFECTOR_OFFSET2_X - cartesian[X_AXIS];
-  dy = DELTA_TOWER2_Y - EFFECTOR_OFFSET2_Y - cartesian[Y_AXIS];
-  delta[Y_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + cartesian[Z_AXIS];
-  dx = DELTA_TOWER3_X - EFFECTOR_OFFSET3_X - cartesian[X_AXIS];
-  dy = DELTA_TOWER3_Y - EFFECTOR_OFFSET3_Y - cartesian[Y_AXIS];
-  delta[Z_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2 - dx*dx - dy*dy) + cartesian[Z_AXIS];
-#else
-  // it appears that if you set DELTA_RADIUS appropriately, the below is equivalent to above
-  delta[X_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2
-                       - sq(DELTA_TOWER1_X-cartesian[X_AXIS])
-                       - sq(DELTA_TOWER1_Y-cartesian[Y_AXIS])
-                       ) + cartesian[Z_AXIS];
-  delta[Y_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2
-                       - sq(DELTA_TOWER2_X-cartesian[X_AXIS])
-                       - sq(DELTA_TOWER2_Y-cartesian[Y_AXIS])
-                       ) + cartesian[Z_AXIS];
-  delta[Z_AXIS] = sqrt(DELTA_DIAGONAL_ROD_2
-                       - sq(DELTA_TOWER3_X-cartesian[X_AXIS])
-                       - sq(DELTA_TOWER3_Y-cartesian[Y_AXIS])
-                       ) + cartesian[Z_AXIS];
-#endif
-  /*
-  SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
-  SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
-  SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
-
-  SERIAL_ECHOPGM("delta x="); SERIAL_ECHO(delta[X_AXIS]);
-  SERIAL_ECHOPGM(" y="); SERIAL_ECHO(delta[Y_AXIS]);
-  SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(delta[Z_AXIS]);
-  */
-}
-#endif
-
-void calculate_delta(float cartesian[3])
-{
-  float dx,dy;
-  // it appears that if you set DELTA_RADIUS appropriately, the below is equivalent to above
-  dx = Delta.t1x - cartesian[X_AXIS];
-  dy = Delta.t1y - cartesian[Y_AXIS];
-  Delta.delta[X_AXIS] = sqrt(Delta.diagRodLen2 - (dx*dx + dy*dy)) + cartesian[Z_AXIS];
-  dx = Delta.t2x - cartesian[X_AXIS];
-  dy = Delta.t2y - cartesian[Y_AXIS];
-  Delta.delta[Y_AXIS] = sqrt(Delta.diagRodLen2 - (dx*dx + dy*dy)) + cartesian[Z_AXIS];
-  dx = cartesian[X_AXIS];
-  dy = Delta.t3y - cartesian[Y_AXIS];
-  Delta.delta[Z_AXIS] = sqrt(Delta.diagRodLen2 - (dx*dx + dy*dy)) + cartesian[Z_AXIS];
-/*
-  SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
-  SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
-  SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
-
-  SERIAL_ECHOPGM("delta x="); SERIAL_ECHO(Delta.delta[X_AXIS]);
-  SERIAL_ECHOPGM(" y="); SERIAL_ECHO(Delta.delta[Y_AXIS]);
-  SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(Delta.delta[Z_AXIS]);
-*/
-}
-
-// Adjust print surface height by linear interpolation over the bed_level array.
-void adjust_delta(float cartesian[3])
-{
-#ifdef DELTA_TRAM_COMPENSATION
-  float x = cartesian[X_AXIS];
-  float y = cartesian[Y_AXIS];
-  float offset = Delta.tramPoly.A +
-    Delta.tramPoly.B * x   +
-    Delta.tramPoly.C * y   +
-    Delta.tramPoly.D * x*y +
-    Delta.tramPoly.E * x*x +
-    Delta.tramPoly.F * y*y ;
-
-  //SERIAL_ECHOPGM(" offset("); SERIAL_ECHO(round(cartesian[X_AXIS]));
-  //SERIAL_ECHOPGM(",");        SERIAL_ECHO(round(cartesian[Y_AXIS]));
-  //SERIAL_ECHOPGM(")=");SERIAL_ECHOLN(offset);
-
-  Delta.delta[X_AXIS] -= offset;
-  Delta.delta[Y_AXIS] -= offset;
-  Delta.delta[Z_AXIS] -= offset;
-#else
-#ifdef ENABLE_AUTO_BED_LEVELING
-  int half = (ACCURATE_BED_LEVELING_POINTS - 1) / 2;
-  float grid_x = max(0.001-half, min(half-0.001, cartesian[X_AXIS] / ACCURATE_BED_LEVELING_GRID_X));
-  float grid_y = max(0.001-half, min(half-0.001, cartesian[Y_AXIS] / ACCURATE_BED_LEVELING_GRID_Y));
-  int floor_x = floor(grid_x);
-  int floor_y = floor(grid_y);
-  float ratio_x = grid_x - floor_x;
-  float ratio_y = grid_y - floor_y;
-  float z1 = bed_level[floor_x+half][floor_y+half];
-  float z2 = bed_level[floor_x+half][floor_y+half+1];
-  float z3 = bed_level[floor_x+half+1][floor_y+half];
-  float z4 = bed_level[floor_x+half+1][floor_y+half+1];
-  float left = (1-ratio_y)*z1 + ratio_y*z2;
-  float right = (1-ratio_y)*z3 + ratio_y*z4;
-  float offset = (1-ratio_x)*left + ratio_x*right;
-
-  Delta.delta[X_AXIS] += offset;
-  Delta.delta[Y_AXIS] += offset;
-  Delta.delta[Z_AXIS] += offset;
-  /*
-  SERIAL_ECHOPGM("grid_x="); SERIAL_ECHO(grid_x);
-  SERIAL_ECHOPGM(" grid_y="); SERIAL_ECHO(grid_y);
-  SERIAL_ECHOPGM(" floor_x="); SERIAL_ECHO(floor_x);
-  SERIAL_ECHOPGM(" floor_y="); SERIAL_ECHO(floor_y);
-  SERIAL_ECHOPGM(" ratio_x="); SERIAL_ECHO(ratio_x);
-  SERIAL_ECHOPGM(" ratio_y="); SERIAL_ECHO(ratio_y);
-  SERIAL_ECHOPGM(" z1="); SERIAL_ECHO(z1);
-  SERIAL_ECHOPGM(" z2="); SERIAL_ECHO(z2);
-  SERIAL_ECHOPGM(" z3="); SERIAL_ECHO(z3);
-  SERIAL_ECHOPGM(" z4="); SERIAL_ECHO(z4);
-  SERIAL_ECHOPGM(" left="); SERIAL_ECHO(left);
-  SERIAL_ECHOPGM(" right="); SERIAL_ECHO(right);
-  SERIAL_ECHOPGM(" offset="); SERIAL_ECHOLN(offset);
-  */
-#endif
-#endif
-}
-
-void prepare_move_raw()
-{
-  previous_millis_cmd = millis();
-  calculate_delta(destination);
-  plan_buffer_line(Delta.delta[X_AXIS], Delta.delta[Y_AXIS], Delta.delta[Z_AXIS],
-                   destination[E_AXIS], feedrate*feedmultiply/60/100.0,
-                   active_extruder);
-  for(int8_t i=0; i < NUM_AXIS; i++) {
-    current_position[i] = destination[i];
-  }
-}
-#endif // DELTA
-
 void prepare_move()
 {
   clamp_to_software_endstops(destination);
 
   previous_millis_cmd = millis();
 #ifdef DELTA
-  float difference[NUM_AXIS];
-  for (int8_t i=0; i < NUM_AXIS; i++) {
-    difference[i] = destination[i] - current_position[i];
-  }
-  float cartesian_mm = sqrt(sq(difference[X_AXIS]) +
-                            sq(difference[Y_AXIS]) +
-                            sq(difference[Z_AXIS]));
-  if (cartesian_mm < 0.000001) { cartesian_mm = abs(difference[E_AXIS]); }
-  if (cartesian_mm < 0.000001) { return; }
-  float seconds = 6000 * cartesian_mm / feedrate / feedmultiply;
-  int steps = max(1, int(DELTA_SEGMENTS_PER_SECOND * seconds));
-  // SERIAL_ECHOPGM("mm="); SERIAL_ECHO(cartesian_mm);
-  // SERIAL_ECHOPGM(" seconds="); SERIAL_ECHO(seconds);
-  // SERIAL_ECHOPGM(" steps="); SERIAL_ECHOLN(steps);
-  for (int s = 1; s <= steps; s++) {
-    float fraction = float(s) / float(steps);
-    for(int8_t i=0; i < NUM_AXIS; i++) {
-      destination[i] = current_position[i] + difference[i] * fraction;
-    }
-    calculate_delta(destination);
-    #ifdef NONLINEAR_BED_LEVELING
-      adjust_delta(destination);
-    #endif
-    #ifdef DELTA_TRAM_COMPENSATION
-      if (!Delta.tramDisabled) adjust_delta(destination);
-    #endif
-
-    plan_buffer_line(Delta.delta[X_AXIS], Delta.delta[Y_AXIS], Delta.delta[Z_AXIS],
-                     destination[E_AXIS], feedrate*feedmultiply/60/100.0,
-                     active_extruder);
-  }
+  prepare_move_delta();
 #else
 
 #ifdef DUAL_X_CARRIAGE
