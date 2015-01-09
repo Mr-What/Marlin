@@ -1,7 +1,7 @@
 // delta-specific definitions
 
 typedef struct DeltaParams_s {
-  float delta[3];  // delta power positions
+  float delta[3];  // delta tower positions
   float endstop_adj[3];
   float diagRodLen;
   float radius[3];
